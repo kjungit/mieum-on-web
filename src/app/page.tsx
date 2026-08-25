@@ -1,69 +1,107 @@
-import Image from "next/image";
+"use client";
+
+import Link from "next/link";
+import { useEffect, useState } from "react";
+
+import { useAuth } from "@/lib/auth-context";
+import { useSelectedChild } from "@/lib/child-context";
+import { getAllergies, type ChildAllergyResponse } from "@/lib/api/children";
+import { listRecentViews, type RecentViewResponse } from "@/lib/api/activity";
 
 export default function Home() {
+  const { token } = useAuth();
+  const { selectedChild, isLoading } = useSelectedChild();
+  const [allergies, setAllergies] = useState<ChildAllergyResponse[]>([]);
+  const [recentViews, setRecentViews] = useState<RecentViewResponse[]>([]);
+
+  useEffect(() => {
+    if (!token || !selectedChild) {
+      Promise.resolve().then(() => setAllergies([]));
+      return;
+    }
+    getAllergies(token, selectedChild.id)
+      .then(setAllergies)
+      .catch(() => setAllergies([]));
+  }, [token, selectedChild]);
+
+  useEffect(() => {
+    if (!token) {
+      return;
+    }
+    listRecentViews(token)
+      .then((list) => setRecentViews(list.slice(0, 5)))
+      .catch(() => setRecentViews([]));
+  }, [token]);
+
+  const hasAllergies = allergies.filter((allergy) => allergy.status === "HAS");
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <main className="flex flex-col gap-6 px-6 py-10">
+      <div>
+        <h1 className="text-2xl font-semibold text-brand">미음:ON</h1>
+        <p className="mt-1 text-sm text-text-secondary">
+          우리 아이가 먹는 것, 먹기 전에 살펴보세요.
+        </p>
+      </div>
+
+      <div className="flex gap-3">
+        <Link
+          href="/search"
+          className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-brand py-4 text-sm font-medium text-white"
+        >
+          🔍 제품 검색
+        </Link>
+        <Link
+          href="/scan"
+          className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-background-element py-4 text-sm font-medium"
+        >
+          📷 원재료 촬영
+        </Link>
+      </div>
+
+      {!isLoading && !selectedChild ? (
+        <Link
+          href="/children/new"
+          className="rounded-2xl border border-dashed border-background-selected p-4 text-center text-sm text-text-secondary"
+        >
+          아이를 등록하면 아이 맞춤 분석을 받을 수 있어요. 아이 등록하기 →
+        </Link>
+      ) : null}
+
+      {selectedChild ? (
+        <Link
+          href="/children"
+          className="rounded-2xl bg-background-element p-4"
+        >
+          <p className="font-medium">
+            {selectedChild.name} · {selectedChild.ageMonths}개월
           </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+          <p className="mt-1 text-sm text-text-secondary">
+            {hasAllergies.length > 0
+              ? hasAllergies.map((allergy) => allergy.ingredientName).join(", ") + " 알레르기"
+              : "등록된 알레르기 없음"}
+          </p>
+        </Link>
+      ) : null}
+
+      {recentViews.length > 0 ? (
+        <section>
+          <h2 className="mb-2 text-sm font-medium text-text-secondary">최근 본 제품</h2>
+          <ul className="space-y-2">
+            {recentViews.map((view) => (
+              <li key={view.id}>
+                <Link
+                  href={`/products/${view.product.id}`}
+                  className="flex items-center justify-between rounded-xl bg-background-element px-4 py-3 text-sm"
+                >
+                  <span>{view.product.name}</span>
+                  <span className="text-text-secondary">{view.product.manufacturer}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+    </main>
   );
 }
