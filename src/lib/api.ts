@@ -3,6 +3,7 @@ import { refreshAccessToken } from "@/lib/token-refresh";
 
 // mieum-on-server의 응답 규약(global.common.ApiResponse / global.exception.ErrorResponse)에 맞춘 타입.
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+const MAX_AUTH_RETRIES = 2;
 
 interface ApiSuccessBody<T> {
   success: true;
@@ -67,18 +68,23 @@ export async function apiFetch<T>(
 
   let response = await send(token);
 
-  if (response.status === 401) {
-    if (token) {
-      // access 토큰 만료 — 네이티브가 재발급해 준 토큰으로 한 번만 다시 보낸다. 재시도도 401이면 더 반복하지
-      // 않는다(그 사이 네이티브가 재발급을 거절해 이미 로그아웃 흐름으로 넘어갔다).
-      const refreshedToken = await refreshAccessToken(token);
-      if (refreshedToken) {
-        response = await send(refreshedToken);
-      }
-    } else {
-      // 토큰이 아예 없으면 재발급할 대상도 없다 — 네이티브가 로그인 흐름으로 유도하도록 알린다.
-      postToNative({ type: "AUTH_EXPIRED" });
+  if (response.status === 401 && !token) {
+    // 토큰이 아예 없으면 재발급할 대상도 없다 — 네이티브가 로그인 흐름으로 유도하도록 알린다.
+    postToNative({ type: "AUTH_EXPIRED" });
+  }
+
+  // access 토큰 만료 — 새 토큰으로 다시 보낸다. 첫 재시도는 "이미 다른 요청이 받아 둔 토큰"일 수 있는데, 앱이
+  // 오래 백그라운드에 있었다면 그 토큰도 만료됐을 수 있다. 그래서 재시도도 401이면 그 토큰 기준으로 한 번 더
+  // 재발급받는다. 무한 반복을 막기 위해 재시도는 최대 MAX_AUTH_RETRIES번이고, 새 토큰을 못 받으면
+  // (네이티브가 재발급을 거절·실패) 즉시 멈춘다.
+  let usedToken = token;
+  for (let retry = 0; response.status === 401 && usedToken && retry < MAX_AUTH_RETRIES; retry++) {
+    const refreshedToken = await refreshAccessToken(usedToken);
+    if (!refreshedToken || refreshedToken === usedToken) {
+      break;
     }
+    usedToken = refreshedToken;
+    response = await send(usedToken);
   }
 
   if (!response.ok) {
