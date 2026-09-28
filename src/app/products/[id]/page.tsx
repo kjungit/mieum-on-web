@@ -20,7 +20,7 @@ import type { EvidenceResponse, ProductSummaryResponse } from "@/lib/api/types";
 import { GradeBadge } from "@/components/severity-badge";
 import { EvidenceSheet } from "@/components/evidence-sheet";
 import { toggleCompareTray, useCompareTray, COMPARE_TRAY_MAX } from "@/lib/compare-tray";
-import { GRADE_META, toOverallGrade, type OverallGrade } from "@/lib/grade";
+import { GRADE_META, severityToGrade, toOverallGrade, worseGrade, type OverallGrade } from "@/lib/grade";
 
 interface AnalysisRow {
   key: string;
@@ -180,19 +180,20 @@ export default function ProductDetailPage() {
     );
   }
 
+  // 원재료 색은 성분마다 그 성분에 걸린 판정 중 가장 나쁜 것으로 칠한다. 행 등급을 그대로 쓰면 행 안의 다른
+  // 성분 등급(예: 제조사 권장연령 경고)이 번지고, 나중에 처리한 행이 더 가벼운 색으로 덮어쓴다.
   const flaggedGradeByIngredient = new Map<string, OverallGrade>();
-  analysisRows.forEach((row) => {
-    if (row.grade === "G") return;
-    const names =
-      row.key === "allergy"
-        ? [...(analysis?.allergyWarnings ?? []), ...(analysis?.allergyNeedsReview ?? [])].map((f) => f.ingredientName)
-        : row.key === "caution"
-          ? (analysis?.cautionFindings ?? []).map((f) => f.ingredientName)
-          : row.key === "age"
-            ? (analysis?.age.ingredientFindings ?? []).map((f) => f.ingredientName)
-            : [];
-    names.forEach((name) => flaggedGradeByIngredient.set(name, row.grade));
-  });
+  const flag = (name: string, grade: OverallGrade) => {
+    if (grade === "G") return;
+    const current = flaggedGradeByIngredient.get(name);
+    flaggedGradeByIngredient.set(name, current ? worseGrade(current, grade) : grade);
+  };
+  if (analysis) {
+    analysis.allergyWarnings.forEach((f) => flag(f.ingredientName, "R"));
+    analysis.allergyNeedsReview.forEach((f) => flag(f.ingredientName, "C"));
+    analysis.age.ingredientFindings.forEach((f) => flag(f.ingredientName, severityToGrade(f.severity)));
+    analysis.cautionFindings.forEach((f) => flag(f.ingredientName, severityToGrade(f.severity)));
+  }
 
   return (
     <main className="flex flex-col pb-10">
