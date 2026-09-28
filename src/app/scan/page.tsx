@@ -26,6 +26,7 @@ export default function ScanPage() {
   const [barcode, setBarcode] = useState("");
   const [barcodeSearching, setBarcodeSearching] = useState(false);
   const [barcodeNotFound, setBarcodeNotFound] = useState(false);
+  const [barcodeError, setBarcodeError] = useState<string | null>(null);
   const router = useRouter();
   const latestRef = useRef({ token, childId: selectedChild?.id ?? null });
 
@@ -71,6 +72,7 @@ export default function ScanPage() {
     if (!token || !barcode.trim()) return;
     setBarcodeSearching(true);
     setBarcodeNotFound(false);
+    setBarcodeError(null);
     try {
       const products = await searchProducts(token, { barcode: barcode.trim() });
       if (products[0]) {
@@ -78,6 +80,8 @@ export default function ScanPage() {
       } else {
         setBarcodeNotFound(true);
       }
+    } catch (err) {
+      setBarcodeError(err instanceof ApiError ? err.message : "검색에 실패했어요. 잠시 후 다시 시도해주세요.");
     } finally {
       setBarcodeSearching(false);
     }
@@ -161,6 +165,7 @@ export default function ScanPage() {
           {barcodeNotFound ? (
             <p className="text-center text-xs text-white/55">등록된 제품을 찾지 못했어요. 원재료 촬영을 이용해보세요.</p>
           ) : null}
+          {barcodeError ? <p className="text-center text-xs text-white/55">{barcodeError}</p> : null}
         </div>
       )}
 

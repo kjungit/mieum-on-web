@@ -10,7 +10,7 @@ import { getAllergies, type ChildAllergyResponse } from "@/lib/api/children";
 import { addFavorite, listFavorites, removeFavorite, listRecentViews, type RecentViewResponse } from "@/lib/api/activity";
 import { analyze, type AnalysisResponse } from "@/lib/api/analysis";
 import { useCompareTray, COMPARE_TRAY_MAX } from "@/lib/compare-tray";
-import { GRADE_META, toOverallGrade } from "@/lib/grade";
+import { GRADE_META, toOverallGrade, type OverallGrade } from "@/lib/grade";
 
 export default function Home() {
   const { token } = useAuth();
@@ -46,40 +46,58 @@ export default function Home() {
       Promise.resolve().then(() => setRecentAnalysis({}));
       return;
     }
-    Promise.all(
+    // 아이를 바꾸면 이전 아이의 늦게 도착한 결과가 새 아이 목록에 섞이지 않게 버린다. 한 제품 분석이 실패해도
+    // (삭제된 제품 등) 나머지 등급은 보여준다.
+    let cancelled = false;
+    Promise.allSettled(
       recentViews.map((view) =>
         analyze(token, selectedChild.id, view.product.id).then((result) => [view.product.id, result] as const),
       ),
-    ).then((entries) => setRecentAnalysis(Object.fromEntries(entries)));
+    ).then((settled) => {
+      if (cancelled) return;
+      const entries = settled.flatMap((outcome) => (outcome.status === "fulfilled" ? [outcome.value] : []));
+      setRecentAnalysis(Object.fromEntries(entries));
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [token, selectedChild, recentViews]);
 
   const hasAllergies = allergies.filter((allergy) => allergy.status === "HAS");
   const unknownAllergies = allergies.filter((allergy) => allergy.status === "UNKNOWN");
 
   const childTags = useMemo(() => {
-    const tags: { label: string; color: string }[] = hasAllergies.map((a) => ({
+    // 색은 CSS 변수라 "var(--x)1a"처럼 알파값을 이어 붙일 수 없다 — 등급별 tint 토큰을 쓴다.
+    const tags: { label: string; grade: OverallGrade }[] = hasAllergies.map((a) => ({
       label: `${a.ingredientName} 있음`,
-      color: "var(--grade-r)",
+      grade: "R",
     }));
-    unknownAllergies.forEach((a) => tags.push({ label: `${a.ingredientName} 알 수 없음`, color: "var(--grade-c)" }));
-    if (tags.length === 0) tags.push({ label: "등록된 알레르기 없음", color: "var(--grade-g)" });
+    unknownAllergies.forEach((a) => tags.push({ label: `${a.ingredientName} 알 수 없음`, grade: "C" }));
+    if (tags.length === 0) tags.push({ label: "등록된 알레르기 없음", grade: "G" });
     return tags;
   }, [hasAllergies, unknownAllergies]);
 
   const toggleFavorite = async (productId: number) => {
     if (!token) return;
     const isFav = favoriteIds.has(productId);
-    if (isFav) {
-      await removeFavorite(token, productId);
-    } else {
-      await addFavorite(token, productId);
+    try {
+      if (isFav) {
+        await removeFavorite(token, productId);
+      } else {
+        await addFavorite(token, productId);
+      }
+      setFavoriteIds((current) => {
+        const next = new Set(current);
+        if (isFav) next.delete(productId);
+        else next.add(productId);
+        return next;
+      });
+    } catch {
+      // 처음 목록 조회가 실패해 상태가 어긋났을 수 있다 — 서버 기준으로 다시 맞춘다.
+      listFavorites(token)
+        .then((list) => setFavoriteIds(new Set(list.map((f) => f.product.id))))
+        .catch(() => {});
     }
-    setFavoriteIds((current) => {
-      const next = new Set(current);
-      if (isFav) next.delete(productId);
-      else next.add(productId);
-      return next;
-    });
   };
 
   return (
@@ -153,9 +171,9 @@ export default function Home() {
               <span
                 key={tag.label}
                 className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11.5px] font-medium"
-                style={{ backgroundColor: `${tag.color}1a`, color: tag.color }}
+                style={{ backgroundColor: GRADE_META[tag.grade].tintVar, color: GRADE_META[tag.grade].colorVar }}
               >
-                <span className="block h-1.5 w-1.5 rounded-full" style={{ backgroundColor: tag.color }} />
+                <span className="block h-1.5 w-1.5 rounded-full" style={{ backgroundColor: GRADE_META[tag.grade].colorVar }} />
                 {tag.label}
               </span>
             ))}

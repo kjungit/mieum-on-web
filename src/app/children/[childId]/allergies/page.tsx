@@ -53,7 +53,9 @@ export default function ChildAllergiesPage() {
   const { childId: childIdParam } = useParams<{ childId: string }>();
   const childId = Number(childIdParam);
   const { token } = useAuth();
-  const { selectedChild } = useSelectedChild();
+  // 제목은 route의 아이 기준이어야 한다 — 선택된 아이를 쓰면 다른 아이의 알레르기를 편집하면서 엉뚱한 이름이 보인다.
+  const { children: childList } = useSelectedChild();
+  const routeChild = childList.find((child) => child.id === childId) ?? null;
 
   const [allergies, setAllergies] = useState<ChildAllergyResponse[]>([]);
   const [keyword, setKeyword] = useState("");
@@ -94,7 +96,7 @@ export default function ChildAllergiesPage() {
   return (
     <main className="flex flex-col px-5 py-6 pb-16">
       <p className="mb-1.5 text-xl font-black tracking-tight">
-        {selectedChild ? `${selectedChild.name}의 알레르기` : "알레르기 관리"}
+        {routeChild ? `${routeChild.name}의 알레르기` : "알레르기 관리"}
       </p>
       <p className="mb-5 text-xs leading-relaxed text-text-secondary">
         체크하지 않은 성분이 &ldquo;없음&rdquo;으로 오인되지 않도록, 있음 · 알 수 없음 · 없음 3단계로 관리해요.{" "}

@@ -18,7 +18,12 @@ export const GRADE_META: Record<
 // 피하기 > 주의 > 확인 필요 > 괜찮음 순으로 더 나쁜 판정이 우선한다.
 const GRADE_RANK: Record<OverallGrade, number> = { R: 3, Y: 2, C: 1, G: 0 };
 
-function severityToGrade(severity: Severity): OverallGrade {
+/** 둘 중 더 나쁜 판정. 같은 대상에 여러 판정이 겹칠 때 쓴다. */
+export function worseGrade(a: OverallGrade, b: OverallGrade): OverallGrade {
+  return GRADE_RANK[a] >= GRADE_RANK[b] ? a : b;
+}
+
+export function severityToGrade(severity: Severity): OverallGrade {
   if (severity === "RED") return "R";
   if (severity === "YELLOW") return "Y";
   return "G";

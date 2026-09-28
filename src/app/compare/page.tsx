@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { useAuth } from "@/lib/auth-context";
@@ -9,7 +9,7 @@ import { useSelectedChild } from "@/lib/child-context";
 import { compareProducts, type AnalysisResponse } from "@/lib/api/analysis";
 import { OverallGradeBadge } from "@/components/severity-badge";
 import { RadarChart, type RadarSeries } from "@/components/radar-chart";
-import { toggleCompareTray, useCompareTray } from "@/lib/compare-tray";
+import { removeFromCompareTray, useCompareTray } from "@/lib/compare-tray";
 import { GRADE_META, toOverallGrade } from "@/lib/grade";
 
 const SERIES_COLORS = ["#1F7A5E", "#2F6BD8"];
@@ -20,8 +20,11 @@ function allergyScore(result: AnalysisResponse): number {
   return 1;
 }
 
+// 서버는 제조사 권장연령 미달을 RED로 본다. 성분별 연령 규칙(예: 꿀)도 함께 반영한다.
 function ageScore(result: AnalysisResponse): number {
-  return result.age.manufacturerWarning ? 0.35 : 1;
+  if (result.age.manufacturerWarning || result.age.ingredientFindings.some((f) => f.severity === "RED")) return 0;
+  if (result.age.ingredientFindings.some((f) => f.severity === "YELLOW")) return 0.5;
+  return 1;
 }
 
 function cautionScore(result: AnalysisResponse): number {
@@ -44,6 +47,7 @@ function nutritionScores(results: AnalysisResponse[]): number[] {
 
 export default function ComparePage() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const { token } = useAuth();
   const { selectedChild } = useSelectedChild();
   const compareTray = useCompareTray();
@@ -53,16 +57,42 @@ export default function ComparePage() {
     ? idsParam.split(",").map(Number).filter((v) => !Number.isNaN(v))
     : compareTray;
 
-  const [results, setResults] = useState<AnalysisResponse[]>([]);
+  // 결과를 요청한 제품 목록과 함께 둔다 — 제품을 뺀 직후 옛 결과가 순서만 밀려 다른 제품 카드에 붙지 않도록,
+  // 지금 목록과 같은 요청의 결과만 보여준다.
+  const [comparison, setComparison] = useState<{ key: string; results: AnalysisResponse[] } | null>(null);
+  const [compareError, setCompareError] = useState(false);
+  const productKey = productIds.join(",");
+  const results = comparison?.key === productKey ? comparison.results : [];
+
+  // 제품 상세의 "비교함 보기"는 ?ids=로 연다. 이때 화면은 URL 기준이라 비교함만 고치면 아무것도 바뀌지 않으므로
+  // URL에서도 뺀다. 토글이 아니라 제거라서, 비교함에 없던 제품이 거꾸로 담기지도 않는다.
+  const handleRemove = (productId: number) => {
+    removeFromCompareTray(productId);
+    if (idsParam) {
+      const remaining = productIds.filter((id) => id !== productId);
+      router.replace(remaining.length > 0 ? `/compare?ids=${remaining.join(",")}` : "/compare");
+    }
+  };
 
   useEffect(() => {
     if (!token || !selectedChild || productIds.length < 2) {
       return;
     }
-    compareProducts(token, selectedChild.id, productIds).then(setResults);
-    // productIds는 매 렌더마다 새 배열이라 join한 값으로만 비교한다.
+    let cancelled = false;
+    Promise.resolve().then(() => setCompareError(false));
+    compareProducts(token, selectedChild.id, productIds)
+      .then((next) => {
+        if (!cancelled) setComparison({ key: productKey, results: next });
+      })
+      .catch(() => {
+        if (!cancelled) setCompareError(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+    // productIds는 매 렌더마다 새 배열이라 join한 값(productKey)으로만 비교한다.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token, selectedChild, productIds.join(",")]);
+  }, [token, selectedChild, productKey]);
 
   if (!selectedChild) {
     return (
@@ -77,7 +107,17 @@ export default function ComparePage() {
     );
   }
 
-  if (productIds.length < 2 || results.length < 2) {
+  if (productIds.length >= 2 && results.length < 2) {
+    return (
+      <main className="px-6 py-16 text-center">
+        <p className="text-[12.5px] text-text-secondary">
+          {compareError ? "비교 결과를 불러오지 못했어요. 잠시 후 다시 시도해주세요." : "비교하는 중…"}
+        </p>
+      </main>
+    );
+  }
+
+  if (productIds.length < 2) {
     return (
       <main className="flex flex-col items-center px-6 py-16 text-center">
         <p className="mb-5 whitespace-pre-line text-[12.5px] leading-relaxed text-text-secondary">
@@ -131,7 +171,7 @@ export default function ComparePage() {
               ) : null}
               <button
                 type="button"
-                onClick={() => toggleCompareTray(id)}
+                onClick={() => handleRemove(id)}
                 className="text-left text-[10.5px] font-medium text-text-secondary/70"
               >
                 비교함에서 제거
