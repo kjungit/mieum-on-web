@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { Star, X } from "lucide-react";
 
 import { useAuth } from "@/lib/auth-context";
 import { listFavorites, removeFavorite, type FavoriteResponse } from "@/lib/api/activity";
@@ -28,28 +29,32 @@ export default function FavoritesPage() {
   };
 
   return (
-    <main className="flex flex-col gap-4 px-6 py-8">
-      <h1 className="text-lg font-semibold">즐겨찾기</h1>
+    <main className="flex flex-col gap-5 px-5 py-7">
+      <h1 className="text-[17px] font-black tracking-tight">즐겨찾기</h1>
 
       {favorites.length === 0 ? (
-        <p className="text-sm text-text-secondary">즐겨찾기한 제품이 없어요.</p>
+        <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-background-selected py-14 text-center">
+          <Star size={28} className="text-text-secondary" strokeWidth={1.5} />
+          <p className="text-[12.5px] leading-relaxed text-text-secondary">즐겨찾기한 제품이 없어요.</p>
+        </div>
       ) : (
-        <ul className="space-y-2">
+        <ul className="flex flex-col gap-2">
           {favorites.map((favorite) => (
             <li
               key={favorite.id}
-              className="flex items-center justify-between rounded-xl bg-background-element px-4 py-3 text-sm"
+              className="flex items-center gap-3 rounded-2xl border border-background-selected bg-background px-4 py-3.5"
             >
-              <Link href={`/products/${favorite.product.id}`} className="flex-1">
-                <p className="font-medium">{favorite.product.name}</p>
-                <p className="text-text-secondary">{favorite.product.manufacturer}</p>
+              <Link href={`/products/${favorite.product.id}`} className="min-w-0 flex-1">
+                <p className="truncate text-[13.5px] font-bold">{favorite.product.name}</p>
+                <p className="truncate text-xs text-text-secondary">{favorite.product.manufacturer}</p>
               </Link>
               <button
                 type="button"
                 onClick={() => handleRemove(favorite.product.id)}
-                className="text-xs text-red-600"
+                aria-label="즐겨찾기에서 제거"
+                className="flex-none rounded-full p-1.5 text-text-secondary"
               >
-                제거
+                <X size={16} strokeWidth={1.8} />
               </button>
             </li>
           ))}
