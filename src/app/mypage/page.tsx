@@ -42,40 +42,41 @@ export default function MyPage() {
             아이를 등록하면 아이 맞춤 분석을 받을 수 있어요. 아이 등록하기 →
           </Link>
         ) : (
+          // 링크를 선택 버튼 안에 넣으면 <button> 안의 <a>가 되어(잘못된 HTML) 엔진에 따라 이동하지 않는다.
+          // 행 전체를 버튼으로 두지 않고, 선택 영역과 알레르기 링크를 나란히 둔다.
           childList.map((child) => (
-            <button
+            <div
               key={child.id}
-              type="button"
-              onClick={() => {
-                selectChild(child.id);
-              }}
-              className="flex items-center gap-3 rounded-2xl border border-background-selected bg-background p-3.5 text-left"
+              className="flex items-center gap-3 rounded-2xl border border-background-selected bg-background p-3.5"
             >
-              <div
-                className="flex h-9 w-9 flex-none items-center justify-center rounded-full text-[13px] font-bold"
-                style={{
-                  backgroundColor: selectedChild?.id === child.id ? "var(--brand)" : "var(--background-element)",
-                  color: selectedChild?.id === child.id ? "#fff" : "var(--foreground)",
-                }}
+              <button
+                type="button"
+                onClick={() => selectChild(child.id)}
+                aria-pressed={selectedChild?.id === child.id}
+                className="flex min-w-0 flex-1 items-center gap-3 text-left"
               >
-                {child.name.slice(0, 1)}
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-[13.5px] font-bold">
-                  {child.name} · {child.ageMonths}개월
-                </p>
-                <p className="text-[11px] text-text-secondary">
-                  {child.gender ? GENDER_LABEL[child.gender] : "성별 미입력"}
-                </p>
-              </div>
-              <Link
-                href={`/children/${child.id}/allergies`}
-                onClick={(event) => event.stopPropagation()}
-                className="flex-none text-[11px] font-medium text-brand"
-              >
+                <div
+                  className="flex h-9 w-9 flex-none items-center justify-center rounded-full text-[13px] font-bold"
+                  style={{
+                    backgroundColor: selectedChild?.id === child.id ? "var(--brand)" : "var(--background-element)",
+                    color: selectedChild?.id === child.id ? "#fff" : "var(--foreground)",
+                  }}
+                >
+                  {child.name.slice(0, 1)}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[13.5px] font-bold">
+                    {child.name} · {child.ageMonths}개월
+                  </p>
+                  <p className="text-[11px] text-text-secondary">
+                    {child.gender ? GENDER_LABEL[child.gender] : "성별 미입력"}
+                  </p>
+                </div>
+              </button>
+              <Link href={`/children/${child.id}/allergies`} className="flex-none text-[11px] font-medium text-brand">
                 알레르기 관리
               </Link>
-            </button>
+            </div>
           ))
         )}
         <Link href="/children" className="self-start text-[11px] font-medium text-brand">

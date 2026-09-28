@@ -48,6 +48,14 @@ export function toggleCompareTray(productId: number): void {
   emit();
 }
 
+export function removeFromCompareTray(productId: number): void {
+  ensureInitialized();
+  if (!snapshot.includes(productId)) return;
+  snapshot = snapshot.filter((id) => id !== productId);
+  writeStorage(snapshot);
+  emit();
+}
+
 function subscribe(onStoreChange: () => void): () => void {
   ensureInitialized();
   listeners.add(onStoreChange);

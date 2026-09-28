@@ -40,12 +40,28 @@ function buildAnalysisRows(analysis: AnalysisResponse): AnalysisRow[] {
         ? `${analysis.allergyNeedsReview.map((f) => f.ingredientName).join(", ")} 성분의 알레르기 여부가 확인되지 않았어요.`
         : "등록된 알레르기 성분이 발견되지 않았어요.";
 
-  const ageGrade: OverallGrade = analysis.age.manufacturerWarning ? "Y" : "G";
-  const ageText = analysis.age.manufacturerWarning
-    ? `제조사 권장 연령(${analysis.age.manufacturerRecommendedAgeMonth}개월 이상)보다 어려요.`
-    : `권장 연령 기준을 충족해요 · ${analysis.age.childAgeMonths}개월`;
-
+  // 서버는 제조사 권장연령 미달을 RED로 판정한다(AnalysisService.computeOverallGrade). 성분별 연령 규칙
+  // (예: 12개월 미만 꿀)도 종합등급에 들어가므로, 이 행에 보이지 않으면 종합등급만 RED이고 이유는 안 보인다.
   const cautionSeverityRank: Record<string, number> = { RED: 2, YELLOW: 1, GREEN: 0 };
+  const ageFindings = analysis.age.ingredientFindings;
+  const worstAgeFinding = ageFindings.reduce<"RED" | "YELLOW" | "GREEN">(
+    (worst, f) => (cautionSeverityRank[f.severity] > cautionSeverityRank[worst] ? f.severity : worst),
+    "GREEN",
+  );
+  const ageGrade: OverallGrade =
+    analysis.age.manufacturerWarning || worstAgeFinding === "RED" ? "R" : worstAgeFinding === "YELLOW" ? "Y" : "G";
+  const ageMessages: string[] = [];
+  if (analysis.age.manufacturerWarning) {
+    ageMessages.push(`제조사 권장 연령(${analysis.age.manufacturerRecommendedAgeMonth}개월 이상)보다 어려요.`);
+  }
+  if (ageFindings.length > 0) {
+    ageMessages.push(
+      `${ageFindings.map((f) => (f.minAgeMonth != null ? `${f.ingredientName}(${f.minAgeMonth}개월 이상)` : f.ingredientName)).join(", ")} 성분은 아직 이른 월령이에요.`,
+    );
+  }
+  const ageText =
+    ageMessages.length > 0 ? ageMessages.join(" ") : `권장 연령 기준을 충족해요 · ${analysis.age.childAgeMonths}개월`;
+
   const worstCaution = analysis.cautionFindings.reduce<"RED" | "YELLOW" | "GREEN">(
     (worst, f) => (cautionSeverityRank[f.severity] > cautionSeverityRank[worst] ? f.severity : worst),
     "GREEN",
@@ -126,12 +142,19 @@ export default function ProductDetailPage() {
 
   const toggleFavorite = async () => {
     if (!token) return;
-    if (isFavorite) {
-      await removeFavorite(token, productId);
-    } else {
-      await addFavorite(token, productId);
+    try {
+      if (isFavorite) {
+        await removeFavorite(token, productId);
+      } else {
+        await addFavorite(token, productId);
+      }
+      setIsFavorite((current) => !current);
+    } catch {
+      // 처음 목록 조회가 실패해 상태가 어긋났을 수 있다 — 서버 기준으로 다시 맞춘다.
+      listFavorites(token)
+        .then((favorites) => setIsFavorite(favorites.some((favorite) => favorite.product.id === productId)))
+        .catch(() => {});
     }
-    setIsFavorite((current) => !current);
   };
 
   const handleExplain = async () => {
@@ -165,7 +188,9 @@ export default function ProductDetailPage() {
         ? [...(analysis?.allergyWarnings ?? []), ...(analysis?.allergyNeedsReview ?? [])].map((f) => f.ingredientName)
         : row.key === "caution"
           ? (analysis?.cautionFindings ?? []).map((f) => f.ingredientName)
-          : [];
+          : row.key === "age"
+            ? (analysis?.age.ingredientFindings ?? []).map((f) => f.ingredientName)
+            : [];
     names.forEach((name) => flaggedGradeByIngredient.set(name, row.grade));
   });
 
@@ -353,7 +378,9 @@ export default function ProductDetailPage() {
         </section>
       ) : null}
 
-      {overallGrade === "R" || overallGrade === "C" ? (
+      {/* 등급이 RED이거나 알레르기 '알 수 없음'이 있으면 대체 제품을 권한다. 4단계 등급으로 판단하면
+          YELLOW + 확인 필요인 제품이 "Y"로 합쳐져 빠진다. */}
+      {analysis && (analysis.overallGrade === "RED" || analysis.needsReview) ? (
         <section className="px-5 pt-6">
           <button
             type="button"

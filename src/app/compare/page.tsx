@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { useAuth } from "@/lib/auth-context";
@@ -9,7 +9,7 @@ import { useSelectedChild } from "@/lib/child-context";
 import { compareProducts, type AnalysisResponse } from "@/lib/api/analysis";
 import { OverallGradeBadge } from "@/components/severity-badge";
 import { RadarChart, type RadarSeries } from "@/components/radar-chart";
-import { toggleCompareTray, useCompareTray } from "@/lib/compare-tray";
+import { removeFromCompareTray, useCompareTray } from "@/lib/compare-tray";
 import { GRADE_META, toOverallGrade } from "@/lib/grade";
 
 const SERIES_COLORS = ["#1F7A5E", "#2F6BD8"];
@@ -20,8 +20,11 @@ function allergyScore(result: AnalysisResponse): number {
   return 1;
 }
 
+// 서버는 제조사 권장연령 미달을 RED로 본다. 성분별 연령 규칙(예: 꿀)도 함께 반영한다.
 function ageScore(result: AnalysisResponse): number {
-  return result.age.manufacturerWarning ? 0.35 : 1;
+  if (result.age.manufacturerWarning || result.age.ingredientFindings.some((f) => f.severity === "RED")) return 0;
+  if (result.age.ingredientFindings.some((f) => f.severity === "YELLOW")) return 0.5;
+  return 1;
 }
 
 function cautionScore(result: AnalysisResponse): number {
@@ -44,6 +47,7 @@ function nutritionScores(results: AnalysisResponse[]): number[] {
 
 export default function ComparePage() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const { token } = useAuth();
   const { selectedChild } = useSelectedChild();
   const compareTray = useCompareTray();
@@ -54,6 +58,16 @@ export default function ComparePage() {
     : compareTray;
 
   const [results, setResults] = useState<AnalysisResponse[]>([]);
+
+  // 제품 상세의 "비교함 보기"는 ?ids=로 연다. 이때 화면은 URL 기준이라 비교함만 고치면 아무것도 바뀌지 않으므로
+  // URL에서도 뺀다. 토글이 아니라 제거라서, 비교함에 없던 제품이 거꾸로 담기지도 않는다.
+  const handleRemove = (productId: number) => {
+    removeFromCompareTray(productId);
+    if (idsParam) {
+      const remaining = productIds.filter((id) => id !== productId);
+      router.replace(remaining.length > 0 ? `/compare?ids=${remaining.join(",")}` : "/compare");
+    }
+  };
 
   useEffect(() => {
     if (!token || !selectedChild || productIds.length < 2) {
@@ -131,7 +145,7 @@ export default function ComparePage() {
               ) : null}
               <button
                 type="button"
-                onClick={() => toggleCompareTray(id)}
+                onClick={() => handleRemove(id)}
                 className="text-left text-[10.5px] font-medium text-text-secondary/70"
               >
                 비교함에서 제거
