@@ -9,6 +9,12 @@ import { registerChild } from "@/lib/api/children";
 import type { Gender } from "@/lib/api/types";
 import { ApiError } from "@/lib/api";
 
+const GENDER_OPTIONS: { value: Gender | ""; label: string }[] = [
+  { value: "FEMALE", label: "여아" },
+  { value: "MALE", label: "남아" },
+  { value: "", label: "미입력" },
+];
+
 export default function NewChildPage() {
   const { token } = useAuth();
   const { refresh, selectChild } = useSelectedChild();
@@ -35,7 +41,7 @@ export default function NewChildPage() {
       });
       await refresh();
       selectChild(child.id);
-      router.push("/children");
+      router.push(`/children/${child.id}/allergies`);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "아이 등록에 실패했어요.");
     } finally {
@@ -44,58 +50,75 @@ export default function NewChildPage() {
   };
 
   return (
-    <main className="flex flex-col gap-6 px-6 py-8">
-      <h1 className="text-lg font-semibold">아이 등록</h1>
+    <main className="flex flex-col px-5 py-8 pb-16">
+      <p className="mb-1.5 text-xl font-black tracking-tight">아이 등록</p>
+      <p className="mb-5 text-xs leading-relaxed text-text-secondary">
+        월령은 직접 입력하지 않고 생년월일로 매번 자동 계산해요.
+      </p>
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <label className="flex flex-col gap-1 text-sm">
-          이름
+      <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+        <label className="flex flex-col gap-1.5">
+          <span className="text-xs font-bold text-text-secondary">이름</span>
           <input
             required
             maxLength={20}
             value={name}
             onChange={(event) => setName(event.target.value)}
-            className="rounded-xl bg-background-element px-4 py-3"
+            placeholder="아이 이름"
+            className="rounded-[13px] border border-background-selected bg-background px-4 py-3.5 text-sm font-medium"
           />
         </label>
 
-        <label className="flex flex-col gap-1 text-sm">
-          생년월일
-          <input
-            required
-            type="date"
-            max={new Date().toISOString().slice(0, 10)}
-            value={birthDate}
-            onChange={(event) => setBirthDate(event.target.value)}
-            className="rounded-xl bg-background-element px-4 py-3"
-          />
+        <label className="flex flex-col gap-1.5">
+          <span className="text-xs font-bold text-text-secondary">생년월일</span>
+          <div className="flex items-center justify-between rounded-[13px] border border-background-selected bg-background px-4 py-3.5">
+            <input
+              required
+              type="date"
+              max={new Date().toISOString().slice(0, 10)}
+              value={birthDate}
+              onChange={(event) => setBirthDate(event.target.value)}
+              className="flex-1 bg-transparent text-sm font-medium"
+            />
+            <span className="flex-none text-[11px] text-brand">월령 자동 계산</span>
+          </div>
         </label>
 
-        <fieldset className="flex flex-col gap-1 text-sm">
-          <legend className="mb-1">성별 (선택)</legend>
-          <div className="flex gap-4">
-            {(["", "MALE", "FEMALE"] as const).map((value) => (
-              <label key={value || "unknown"} className="flex items-center gap-1">
-                <input
-                  type="radio"
-                  name="gender"
-                  checked={gender === value}
-                  onChange={() => setGender(value)}
-                />
-                {value === "" ? "선택 안 함" : value === "MALE" ? "남아" : "여아"}
-              </label>
+        <fieldset className="flex flex-col gap-1.5">
+          <legend className="mb-0.5 text-xs font-bold text-text-secondary">
+            성별 <span className="font-normal text-text-secondary/70">선택</span>
+          </legend>
+          <div className="flex gap-2">
+            {GENDER_OPTIONS.map((option) => (
+              <button
+                key={option.value || "unknown"}
+                type="button"
+                onClick={() => setGender(option.value)}
+                className="flex-1 rounded-[13px] border py-3.5 text-[13px] font-medium"
+                style={
+                  gender === option.value
+                    ? { borderColor: "var(--brand)", color: "var(--brand)", backgroundColor: "var(--grade-g-tint)" }
+                    : { borderColor: "var(--background-selected)", color: "var(--text-secondary)" }
+                }
+              >
+                {option.label}
+              </button>
             ))}
           </div>
         </fieldset>
 
-        {error ? <p className="text-sm text-red-600">{error}</p> : null}
+        <p className="mt-1 text-[11px] leading-relaxed text-text-secondary/70">
+          성별은 분석 로직에 사용하지 않고 데이터로만 수집합니다.
+        </p>
+
+        {error ? <p className="text-sm text-[#D64A3F]">{error}</p> : null}
 
         <button
           type="submit"
           disabled={isSubmitting}
-          className="rounded-full bg-brand py-3 text-sm font-medium text-white disabled:opacity-50"
+          className="mt-2 rounded-2xl bg-brand py-4 text-[13.5px] font-bold text-white disabled:opacity-50"
         >
-          {isSubmitting ? "등록 중…" : "등록하기"}
+          {isSubmitting ? "등록 중…" : "다음 — 알레르기 등록"}
         </button>
       </form>
     </main>

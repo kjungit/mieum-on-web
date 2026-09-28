@@ -2,12 +2,25 @@
 
 /* mieum-on-app(src/constants/theme.ts, app.json)의 브랜드 토큰과 동일하게 맞춤 */
 :root {
-  --background: #ffffff;
-  --foreground: #000000;
-  --background-element: #f0f0f3;
-  --background-selected: #e0e1e6;
-  --text-secondary: #60646c;
-  --brand: #208aef;
+  --background: #faf9f6;
+  --foreground: #16181a;
+  --background-element: #f2f0eb;
+  --background-selected: #edeae3;
+  --text-secondary: rgba(22, 24, 26, 0.55);
+  --brand: #1f7a5e;
+
+  --grade-g: #1f9c6b;
+  --grade-g-tint: #e9f5ef;
+  --grade-g-border: rgba(31, 156, 107, 0.22);
+  --grade-y: #c98a16;
+  --grade-y-tint: #fbf2e1;
+  --grade-y-border: rgba(201, 138, 22, 0.22);
+  --grade-r: #d64a3f;
+  --grade-r-tint: #fcecea;
+  --grade-r-border: rgba(214, 74, 63, 0.22);
+  --grade-c: #5b7391;
+  --grade-c-tint: #edf1f6;
+  --grade-c-border: rgba(91, 115, 145, 0.22);
 }
 
 @theme inline {
@@ -17,17 +30,44 @@
   --color-background-selected: var(--background-selected);
   --color-text-secondary: var(--text-secondary);
   --color-brand: var(--brand);
-  --font-sans: var(--font-geist-sans);
+
+  --color-grade-g: var(--grade-g);
+  --color-grade-g-tint: var(--grade-g-tint);
+  --color-grade-g-border: var(--grade-g-border);
+  --color-grade-y: var(--grade-y);
+  --color-grade-y-tint: var(--grade-y-tint);
+  --color-grade-y-border: var(--grade-y-border);
+  --color-grade-r: var(--grade-r);
+  --color-grade-r-tint: var(--grade-r-tint);
+  --color-grade-r-border: var(--grade-r-border);
+  --color-grade-c: var(--grade-c);
+  --color-grade-c-tint: var(--grade-c-tint);
+  --color-grade-c-border: var(--grade-c-border);
+
+  --font-sans: var(--font-noto-sans-kr);
   --font-mono: var(--font-geist-mono);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #000000;
-    --foreground: #ffffff;
-    --background-element: #212225;
-    --background-selected: #2e3135;
-    --text-secondary: #b0b4ba;
+    --background: #14171a;
+    --foreground: #faf9f6;
+    --background-element: #1f2327;
+    --background-selected: #262b30;
+    --text-secondary: rgba(250, 249, 246, 0.55);
+
+    --grade-g: #3fc78d;
+    --grade-g-tint: rgba(63, 199, 141, 0.16);
+    --grade-g-border: rgba(63, 199, 141, 0.32);
+    --grade-y: #e0a83d;
+    --grade-y-tint: rgba(224, 168, 61, 0.16);
+    --grade-y-border: rgba(224, 168, 61, 0.32);
+    --grade-r: #e8695f;
+    --grade-r-tint: rgba(232, 105, 95, 0.16);
+    --grade-r-border: rgba(232, 105, 95, 0.32);
+    --grade-c: #8098b8;
+    --grade-c-tint: rgba(128, 152, 184, 0.16);
+    --grade-c-border: rgba(128, 152, 184, 0.32);
   }
 }
 
