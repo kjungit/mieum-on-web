@@ -11,6 +11,7 @@ import { OverallGradeBadge } from "@/components/severity-badge";
 import { RadarChart, type RadarSeries } from "@/components/radar-chart";
 import { removeFromCompareTray, useCompareTray } from "@/lib/compare-tray";
 import { GRADE_META, toOverallGrade } from "@/lib/grade";
+import { nutritionBasisLabel, worstSeverity } from "@/lib/nutrition";
 
 const SERIES_COLORS = ["#1F7A5E", "#2F6BD8"];
 
@@ -28,21 +29,22 @@ function ageScore(result: AnalysisResponse): number {
 }
 
 function cautionScore(result: AnalysisResponse): number {
-  const worst = result.cautionFindings.reduce<"RED" | "YELLOW" | "GREEN">((acc, f) => {
-    if (f.severity === "RED") return "RED";
-    if (f.severity === "YELLOW" && acc !== "RED") return "YELLOW";
-    return acc;
-  }, "GREEN");
+  const worst = worstSeverity(result.cautionFindings.map((f) => f.severity));
+  const ruleScore = worst === "RED" ? 0 : worst === "YELLOW" ? 0.5 : 1;
+  return Math.min(ruleScore, parentCautionPenalty(result));
+}
+
+// 서버가 출처 기반 영양 임계치(나트륨·당류, 월령별)로 판정한 결과를 쓴다. 영양정보가 없는 제품은 평가하지
+// 않은 것이라 "안전"(1)이 아니라 중간값으로 둔다.
+function nutritionScore(result: AnalysisResponse): number {
+  if (!result.nutrition) return 0.5;
+  const worst = worstSeverity(result.nutritionFindings.map((f) => f.severity));
   return worst === "RED" ? 0 : worst === "YELLOW" ? 0.5 : 1;
 }
 
-// 영유아 영양 임계치가 아직 서버에 없어(기획 결정서 §5 미결) 절대 기준 대신
-// 비교 대상 사이의 상대값(나트륨+당류 가중합)으로만 안전도를 근사한다.
-function nutritionScores(results: AnalysisResponse[]): number[] {
-  const loads = results.map((r) => (r.nutrition?.sodium ?? 0) + (r.nutrition?.sugar ?? 0) * 4);
-  const max = Math.max(...loads, 0);
-  if (max === 0) return results.map(() => 1);
-  return loads.map((load) => 1 - load / max);
+// 보호자가 직접 지정한 주의 성분도 주의 축에 반영한다(서버와 같이 최소 YELLOW).
+function parentCautionPenalty(result: AnalysisResponse): number {
+  return result.parentCautionFindings.length > 0 ? 0.5 : 1;
 }
 
 export default function ComparePage() {
@@ -130,15 +132,16 @@ export default function ComparePage() {
     );
   }
 
-  const nScores = nutritionScores(results);
   const series: RadarSeries[] = results.map((result, index) => ({
     name: result.productName,
     color: SERIES_COLORS[index % SERIES_COLORS.length],
     fill: `${SERIES_COLORS[index % SERIES_COLORS.length]}22`,
-    values: [allergyScore(result), ageScore(result), nScores[index], cautionScore(result)],
+    values: [allergyScore(result), ageScore(result), nutritionScore(result), cautionScore(result)],
   }));
 
   const rows: [string, (result: AnalysisResponse) => string][] = [
+    // 제품마다 영양 표기 기준(100g·1회 제공량·총 내용량)이 달라 수치만 나란히 두면 오해할 수 있다.
+    ["영양 기준", (result) => (result.nutrition ? nutritionBasisLabel(result.nutrition) : "정보 없음")],
     ["나트륨", (result) => (result.nutrition?.sodium != null ? `${result.nutrition.sodium}mg` : "-")],
     ["당류", (result) => (result.nutrition?.sugar != null ? `${result.nutrition.sugar}g` : "-")],
     ["단백질", (result) => (result.nutrition?.protein != null ? `${result.nutrition.protein}g` : "-")],

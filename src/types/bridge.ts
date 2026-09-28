@@ -21,7 +21,10 @@ export type WebToNativeMessage =
   | { type: "LOGOUT" }
   | { type: "AUTH_EXPIRED" }
   | { type: "NAVIGATE_NATIVE"; route: string }
-  | { type: "REQUEST_CAMERA" };
+  | { type: "REQUEST_CAMERA" }
+  // 비밀번호 변경처럼 웹이 서버에서 새 토큰 쌍을 직접 받으면 네이티브에 넘긴다. refresh 토큰은 네이티브만
+  // 보관하므로 웹은 저장하지 않는다. 네이티브는 저장한 뒤 TOKEN_REFRESH로 새 access 토큰을 돌려준다.
+  | { type: "SESSION_UPDATED"; accessToken: string; refreshToken: string };
 
 declare global {
   interface Window {

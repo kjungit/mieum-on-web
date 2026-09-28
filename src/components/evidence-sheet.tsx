@@ -41,18 +41,29 @@ export function EvidenceSheet({
       ) : (
         <div className="mb-3 flex flex-col gap-1.5">
           <p className="mb-1 text-xs font-bold text-text-secondary">참고한 기준</p>
-          {evidences.map((evidence) => (
-            <a
-              key={evidence.id}
-              href={evidence.sourceUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="flex flex-col gap-1 rounded-xl border border-background-selected bg-background p-3.5 text-left"
-            >
-              <span className="text-[12px] font-bold">{evidence.sourceOrg}</span>
-              <span className="text-[11.5px] leading-relaxed text-text-secondary">{evidence.title}</span>
-            </a>
-          ))}
+          {evidences.map((evidence) => {
+            const body = (
+              <>
+                <span className="text-[12px] font-bold">{evidence.sourceOrg}</span>
+                <span className="text-[11.5px] leading-relaxed text-text-secondary">{evidence.title}</span>
+                {evidence.description ? (
+                  <span className="text-[11.5px] leading-relaxed text-foreground">{evidence.description}</span>
+                ) : null}
+              </>
+            );
+            const className =
+              "flex flex-col gap-1 rounded-xl border border-background-selected bg-background p-3.5 text-left";
+            // 출처 URL이 없는 근거(내부 기준 등)는 눌러도 갈 곳이 없으므로 링크로 만들지 않는다.
+            return evidence.sourceUrl ? (
+              <a key={evidence.id} href={evidence.sourceUrl} target="_blank" rel="noreferrer" className={className}>
+                {body}
+              </a>
+            ) : (
+              <div key={evidence.id} className={className}>
+                {body}
+              </div>
+            );
+          })}
         </div>
       )}
 
