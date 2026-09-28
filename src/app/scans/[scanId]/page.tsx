@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { getScan, type RawIngredientScanResponse } from "@/lib/api/ocr";
 import { ScanResultList } from "@/components/scan-result";
+import { ScanAnalysis } from "@/components/scan-analysis";
 
 export default function ScanDetailPage() {
   const { scanId: scanIdParam } = useParams<{ scanId: string }>();
@@ -34,6 +35,11 @@ export default function ScanDetailPage() {
         <h1 className="text-lg font-bold">촬영 결과</h1>
         <p className="mt-1 text-xs text-text-secondary">{new Date(scan.createdAt).toLocaleString("ko-KR")}</p>
       </div>
+
+      <section>
+        <h2 className="mb-2 text-sm font-bold">분석 결과</h2>
+        <ScanAnalysis scanId={scan.id} />
+      </section>
 
       {scan.ocrRawText ? (
         <section>

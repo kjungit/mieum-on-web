@@ -21,6 +21,7 @@ import { GradeBadge } from "@/components/severity-badge";
 import { EvidenceSheet } from "@/components/evidence-sheet";
 import { toggleCompareTray, useCompareTray, COMPARE_TRAY_MAX } from "@/lib/compare-tray";
 import { GRADE_META, severityToGrade, toOverallGrade, worseGrade, type OverallGrade } from "@/lib/grade";
+import { nutritionBasisLabel, nutritionFindingEvidences, nutritionVerdict } from "@/lib/nutrition";
 
 interface AnalysisRow {
   key: string;
@@ -72,6 +73,39 @@ function buildAnalysisRows(analysis: AnalysisResponse): AnalysisRow[] {
       ? `${analysis.cautionFindings.map((f) => f.ingredientName).join(", ")} 성분을 한 번 더 확인해보세요.`
       : "별도로 확인할 주의 성분이 없어요.";
 
+  // 보호자가 직접 지정한 성분은 근거 문서가 없는 보호자 판단이라 서버도 최소 YELLOW로만 올린다.
+  const parentCautionRows: AnalysisRow[] =
+    analysis.parentCautionFindings.length > 0
+      ? [
+          {
+            key: "parentCaution",
+            label: "직접 지정한 주의 성분",
+            grade: "Y",
+            text: `보호자님이 지정한 ${analysis.parentCautionFindings.map((f) => f.ingredientName).join(", ")} 성분이 들어있어요.`,
+            evidences: [],
+          },
+        ]
+      : [];
+
+  // 평가하지 못한 항목을 "괜찮아요"로 보이지 않게, 비교 못 한 영양소가 있으면 "확인 필요"로 둔다.
+  const verdict = nutritionVerdict(analysis);
+  const nutritionRow: AnalysisRow = {
+    key: "nutrition",
+    label: "영양",
+    grade:
+      verdict.kind === "exceeded"
+        ? verdict.severity === "RED"
+          ? "R"
+          : verdict.severity === "YELLOW"
+            ? "Y"
+            : "G"
+        : verdict.kind === "withinLimits"
+          ? "G"
+          : "C",
+    text: verdict.text,
+    evidences: nutritionFindingEvidences(analysis.nutritionFindings),
+  };
+
   return [
     {
       key: "allergy",
@@ -94,6 +128,8 @@ function buildAnalysisRows(analysis: AnalysisResponse): AnalysisRow[] {
       text: cautionText,
       evidences: analysis.cautionFindings.flatMap((f) => f.evidences),
     },
+    ...parentCautionRows,
+    nutritionRow,
   ];
 }
 
@@ -193,6 +229,8 @@ export default function ProductDetailPage() {
     analysis.allergyNeedsReview.forEach((f) => flag(f.ingredientName, "C"));
     analysis.age.ingredientFindings.forEach((f) => flag(f.ingredientName, severityToGrade(f.severity)));
     analysis.cautionFindings.forEach((f) => flag(f.ingredientName, severityToGrade(f.severity)));
+    // 보호자 지정 주의 성분은 서버와 같이 YELLOW로 본다.
+    analysis.parentCautionFindings.forEach((f) => flag(f.ingredientName, "Y"));
   }
 
   return (
@@ -355,7 +393,7 @@ export default function ProductDetailPage() {
           <p className="mb-3 text-[15px] font-bold tracking-tight">
             영양정보{" "}
             <span className="text-[11px] font-normal text-text-secondary">
-              {product.nutrition.basis === "PER_100G" ? "100g 기준" : "1회 제공량 기준"}
+              {nutritionBasisLabel(product.nutrition)}
             </span>
           </p>
           <div className="overflow-hidden rounded-[18px] border border-background-selected bg-background px-4">

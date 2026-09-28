@@ -1,12 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Camera, Search } from "lucide-react";
 
 import { useAuth } from "@/lib/auth-context";
 import { useSelectedChild } from "@/lib/child-context";
-import { searchProducts } from "@/lib/api/products";
+import { getCategories, searchProducts, type ProductCategoryResponse } from "@/lib/api/products";
 import type { ProductSummaryResponse } from "@/lib/api/types";
 import { toggleCompareTray, useCompareTray, COMPARE_TRAY_MAX } from "@/lib/compare-tray";
 
@@ -22,18 +22,60 @@ export default function SearchPage() {
   // 서버에 월령/알레르기 제외 검색 API가 아직 없어(design-file 578행 메모의 "검색 결과 필터"),
   // 이미 로드된 결과를 프런트에서만 걸러낸다. recommendedAgeMonth가 있는 제품만 판단 가능하다.
   const [ageFilterOn, setAgeFilterOn] = useState(false);
+  const [categories, setCategories] = useState<ProductCategoryResponse[]>([]);
+  const [category, setCategory] = useState<string | null>(null);
+  const [searchError, setSearchError] = useState<string | null>(null);
+  // 칩을 빠르게 바꾸면 응답 순서가 뒤바뀔 수 있다 — 마지막 요청의 결과만 반영한다.
+  const latestRequest = useRef(0);
 
-  const handleSearch = async () => {
-    if (!token || !keyword.trim()) {
+  useEffect(() => {
+    if (!token) return;
+    getCategories(token)
+      .then(setCategories)
+      .catch(() => setCategories([]));
+  }, [token]);
+
+  // 검색어 없이 카테고리만으로도 둘러볼 수 있고, 둘을 함께 걸 수도 있다(서버가 AND로 처리).
+  const runSearch = async (nextKeyword: string, nextCategory: string | null) => {
+    if (!token || (!nextKeyword.trim() && !nextCategory)) {
       return;
     }
+    const requestId = ++latestRequest.current;
     setIsSearching(true);
+    setSearchError(null);
     try {
-      const products = await searchProducts(token, { keyword: keyword.trim() });
+      const products = await searchProducts(token, {
+        keyword: nextKeyword.trim() || undefined,
+        category: nextCategory ?? undefined,
+      });
+      if (requestId !== latestRequest.current) return;
       setResults(products);
       setHasSearched(true);
+    } catch {
+      if (requestId !== latestRequest.current) return;
+      // 옛 결과를 남기면 새로 고른 칩 아래에 이전 카테고리 제품이 그대로 보인다.
+      setResults([]);
+      setHasSearched(false);
+      setSearchError("검색에 실패했어요. 잠시 후 다시 시도해주세요.");
     } finally {
+      if (requestId === latestRequest.current) setIsSearching(false);
+    }
+  };
+
+  const handleSearch = () => runSearch(keyword, category);
+
+  const handleCategory = (next: string) => {
+    const nextCategory = category === next ? null : next;
+    setCategory(nextCategory);
+    if (nextCategory || keyword.trim()) {
+      void runSearch(keyword, nextCategory);
+    } else {
+      // 진행 중인 요청의 늦은 응답이 비운 목록을 다시 채우지 않도록 무효화한다.
+      latestRequest.current += 1;
       setIsSearching(false);
+      setSearchError(null);
+      setResults([]);
+      setHasSearched(false);
     }
   };
 
@@ -66,6 +108,29 @@ export default function SearchPage() {
           검색
         </button>
       </div>
+
+      {categories.length > 0 ? (
+        <div className="-mx-5 flex gap-2 overflow-x-auto px-5 pb-0.5">
+          {categories.map((item) => {
+            const active = item.category === category;
+            return (
+              <button
+                key={item.category}
+                type="button"
+                onClick={() => handleCategory(item.category)}
+                aria-pressed={active}
+                className={`flex-none rounded-full border px-3.5 py-2 text-xs font-medium ${
+                  active ? "border-brand bg-brand text-white" : "border-background-selected text-text-secondary"
+                }`}
+              >
+                {item.category} <span className={active ? "text-white/70" : "text-text-secondary/60"}>{item.productCount}</span>
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
+
+      {searchError ? <p className="text-sm text-text-secondary">{searchError}</p> : null}
 
       {hasSearched ? (
         <div className="flex flex-wrap gap-2">

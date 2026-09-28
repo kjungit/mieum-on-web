@@ -12,6 +12,7 @@ import { createScan, type RawIngredientScanResponse } from "@/lib/api/ocr";
 import { searchProducts } from "@/lib/api/products";
 import { ApiError } from "@/lib/api";
 import { ScanResultList } from "@/components/scan-result";
+import { ScanAnalysis } from "@/components/scan-analysis";
 
 type Status = "idle" | "waiting-camera" | "uploading" | "done" | "error";
 type Mode = "ingredient" | "barcode";
@@ -173,6 +174,10 @@ export default function ScanPage() {
 
       {scan ? (
         <section className="rounded-t-[24px] bg-background px-1 pb-1 pt-5 text-[var(--foreground)]">
+          <h2 className="mb-2.5 px-4 text-sm font-bold">분석 결과</h2>
+          <div className="mb-5 px-4">
+            <ScanAnalysis scanId={scan.id} />
+          </div>
           <h2 className="mb-2.5 px-4 text-sm font-bold">인식된 원재료</h2>
           <div className="px-4">
             <ScanResultList items={scan.items} />

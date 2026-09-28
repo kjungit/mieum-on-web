@@ -5,7 +5,8 @@ export type AllergyStatus = "HAS" | "NONE" | "UNKNOWN";
 export type Severity = "GREEN" | "YELLOW" | "RED";
 export type RuleType = "ALLERGY" | "AGE" | "SODIUM" | "SUGAR" | "CAFFEINE" | "ADDITIVE";
 export type ProductSource = "SELF" | "MFDS_API";
-export type NutritionBasis = "PER_100G" | "PER_SERVING";
+// PER_TOTAL: 푸드QR은 "총 내용량당"으로 내려준다 — totalContent/totalContentUnit과 함께 봐야 해석된다.
+export type NutritionBasis = "PER_100G" | "PER_SERVING" | "PER_TOTAL";
 export type MatchStatus = "MATCHED" | "UNMATCHED";
 export type IngredientType = "ALLERGEN" | "ADDITIVE" | "NUTRIENT" | "ETC";
 
@@ -13,7 +14,9 @@ export interface EvidenceResponse {
   id: number;
   title: string;
   sourceOrg: string;
-  sourceUrl: string;
+  sourceUrl: string | null;
+  // 근거 요약 문구. 챗봇 인용처럼 요약이 없는 출처는 null이다.
+  description: string | null;
 }
 
 export interface NutritionResponse {
@@ -24,6 +27,8 @@ export interface NutritionResponse {
   protein: number | null;
   fat: number | null;
   sodium: number | null;
+  totalContent: number | null;
+  totalContentUnit: string | null;
 }
 
 export interface ProductSummaryResponse {
