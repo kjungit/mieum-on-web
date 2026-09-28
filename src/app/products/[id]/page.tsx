@@ -21,7 +21,7 @@ import { GradeBadge } from "@/components/severity-badge";
 import { EvidenceSheet } from "@/components/evidence-sheet";
 import { toggleCompareTray, useCompareTray, COMPARE_TRAY_MAX } from "@/lib/compare-tray";
 import { GRADE_META, severityToGrade, toOverallGrade, worseGrade, type OverallGrade } from "@/lib/grade";
-import { nutritionBasisLabel, nutritionFindingEvidences, worstSeverity } from "@/lib/nutrition";
+import { nutritionBasisLabel, nutritionFindingEvidences, nutritionVerdict } from "@/lib/nutrition";
 
 interface AnalysisRow {
   key: string;
@@ -87,17 +87,22 @@ function buildAnalysisRows(analysis: AnalysisResponse): AnalysisRow[] {
         ]
       : [];
 
-  const nutritionSeverity = worstSeverity(analysis.nutritionFindings.map((f) => f.severity));
+  // 평가하지 못한 항목을 "괜찮아요"로 보이지 않게, 비교 못 한 영양소가 있으면 "확인 필요"로 둔다.
+  const verdict = nutritionVerdict(analysis);
   const nutritionRow: AnalysisRow = {
     key: "nutrition",
     label: "영양",
-    grade: nutritionSeverity === "RED" ? "R" : nutritionSeverity === "YELLOW" ? "Y" : "G",
-    text:
-      analysis.nutritionFindings.length > 0
-        ? analysis.nutritionFindings.map((f) => f.description).join(" ")
-        : analysis.nutrition
-          ? "나트륨·당류가 아이 월령 기준을 넘지 않아요."
-          : "영양정보가 없어 나트륨·당류는 평가하지 않았어요.",
+    grade:
+      verdict.kind === "exceeded"
+        ? verdict.severity === "RED"
+          ? "R"
+          : verdict.severity === "YELLOW"
+            ? "Y"
+            : "G"
+        : verdict.kind === "withinLimits"
+          ? "G"
+          : "C",
+    text: verdict.text,
     evidences: nutritionFindingEvidences(analysis.nutritionFindings),
   };
 

@@ -65,6 +65,9 @@ export interface AnalysisResponse {
   cautionFindings: CautionFindingResponse[];
   parentCautionFindings: ParentCautionFindingResponse[];
   nutritionFindings: NutritionFindingResponse[];
+  // 실제로 영양 임계치와 비교한 영양소. 여기 없는 영양소는 finding이 없어도 "기준 이하"가 아니라 "평가하지
+  // 못함"이다(값 없음·표기 기준 불일치·월령에 맞는 기준 없음).
+  evaluatedNutrients: ("SODIUM" | "SUGAR")[];
   nutrition: NutritionResponse | null;
   disclaimer: string;
 }

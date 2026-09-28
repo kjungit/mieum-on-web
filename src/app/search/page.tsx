@@ -53,6 +53,9 @@ export default function SearchPage() {
       setHasSearched(true);
     } catch {
       if (requestId !== latestRequest.current) return;
+      // 옛 결과를 남기면 새로 고른 칩 아래에 이전 카테고리 제품이 그대로 보인다.
+      setResults([]);
+      setHasSearched(false);
       setSearchError("검색에 실패했어요. 잠시 후 다시 시도해주세요.");
     } finally {
       if (requestId === latestRequest.current) setIsSearching(false);
@@ -67,6 +70,10 @@ export default function SearchPage() {
     if (nextCategory || keyword.trim()) {
       void runSearch(keyword, nextCategory);
     } else {
+      // 진행 중인 요청의 늦은 응답이 비운 목록을 다시 채우지 않도록 무효화한다.
+      latestRequest.current += 1;
+      setIsSearching(false);
+      setSearchError(null);
       setResults([]);
       setHasSearched(false);
     }

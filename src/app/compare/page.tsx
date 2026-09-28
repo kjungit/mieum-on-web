@@ -11,7 +11,7 @@ import { OverallGradeBadge } from "@/components/severity-badge";
 import { RadarChart, type RadarSeries } from "@/components/radar-chart";
 import { removeFromCompareTray, useCompareTray } from "@/lib/compare-tray";
 import { GRADE_META, toOverallGrade } from "@/lib/grade";
-import { nutritionBasisLabel, worstSeverity } from "@/lib/nutrition";
+import { nutritionBasisLabel, nutritionVerdict, worstSeverity } from "@/lib/nutrition";
 
 const SERIES_COLORS = ["#1F7A5E", "#2F6BD8"];
 
@@ -34,12 +34,12 @@ function cautionScore(result: AnalysisResponse): number {
   return Math.min(ruleScore, parentCautionPenalty(result));
 }
 
-// 서버가 출처 기반 영양 임계치(나트륨·당류, 월령별)로 판정한 결과를 쓴다. 영양정보가 없는 제품은 평가하지
-// 않은 것이라 "안전"(1)이 아니라 중간값으로 둔다.
+// 서버가 출처 기반 영양 임계치(나트륨·당류, 월령별)로 판정한 결과를 쓴다. 평가하지 못한 영양소가 있으면
+// "안전"(1)이 아니라 중간값으로 둔다 — 실제로 비교해 주의가 나온 제품보다 높게 나오지 않게 한다.
 function nutritionScore(result: AnalysisResponse): number {
-  if (!result.nutrition) return 0.5;
-  const worst = worstSeverity(result.nutritionFindings.map((f) => f.severity));
-  return worst === "RED" ? 0 : worst === "YELLOW" ? 0.5 : 1;
+  const verdict = nutritionVerdict(result);
+  if (verdict.kind === "exceeded") return verdict.severity === "RED" ? 0 : verdict.severity === "YELLOW" ? 0.4 : 1;
+  return verdict.kind === "withinLimits" ? 1 : 0.5;
 }
 
 // 보호자가 직접 지정한 주의 성분도 주의 축에 반영한다(서버와 같이 최소 YELLOW).
