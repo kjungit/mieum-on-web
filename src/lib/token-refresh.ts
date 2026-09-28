@@ -1,8 +1,8 @@
 import { isInNativeWebView, onNativeMessage, postToNative } from "@/lib/native-bridge";
 import { getBridgeSnapshot } from "@/lib/native-bridge-store";
 
-// 네이티브가 재발급에 실패하면(오프라인 등) TOKEN_REFRESH를 보내지 않는다. 무한정 기다리지 않도록 이 시간이
-// 지나면 원래 401 응답으로 실패시킨다.
+// 네이티브는 재발급에 실패하면 TOKEN_REFRESH_FAILED를 보내 바로 끝낸다. 이 타임아웃은 그 메시지를 모르는
+// 옛 앱 버전이나 메시지가 유실된 경우의 안전장치다 — 무한정 기다리지 않고 원래 401 응답으로 실패시킨다.
 const REFRESH_TIMEOUT_MS = 10_000;
 
 let pendingRefresh: Promise<string | null> | null = null;
@@ -41,6 +41,10 @@ function waitForTokenRefresh(): Promise<string | null> {
         clearTimeout(timer);
         unsubscribe();
         resolve(message.token);
+      } else if (message.type === "TOKEN_REFRESH_FAILED") {
+        clearTimeout(timer);
+        unsubscribe();
+        resolve(null);
       }
     });
     const timer = setTimeout(() => {
