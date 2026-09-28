@@ -1,4 +1,5 @@
 import { postToNative } from "@/lib/native-bridge";
+import { refreshAccessToken } from "@/lib/token-refresh";
 
 // mieum-on-server의 응답 규약(global.common.ApiResponse / global.exception.ErrorResponse)에 맞춘 타입.
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -53,19 +54,31 @@ export async function apiFetch<T>(
   // 지정하지 않는다 — 브라우저가 boundary를 포함해 자동으로 설정해야 한다.
   const isFormData = typeof FormData !== "undefined" && body instanceof FormData;
 
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    ...init,
-    headers: {
-      ...(isFormData ? {} : { "Content-Type": "application/json" }),
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...headers,
-    },
-    body: isFormData ? (body as FormData) : body !== undefined ? JSON.stringify(body) : undefined,
-  });
+  const send = (accessToken: string | null | undefined) =>
+    fetch(`${API_BASE_URL}${path}`, {
+      ...init,
+      headers: {
+        ...(isFormData ? {} : { "Content-Type": "application/json" }),
+        ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        ...headers,
+      },
+      body: isFormData ? (body as FormData) : body !== undefined ? JSON.stringify(body) : undefined,
+    });
+
+  let response = await send(token);
 
   if (response.status === 401) {
-    // 만료/무효 토큰 — 네이티브가 재로그인 흐름으로 유도하도록 알림.
-    postToNative({ type: "AUTH_EXPIRED" });
+    if (token) {
+      // access 토큰 만료 — 네이티브가 재발급해 준 토큰으로 한 번만 다시 보낸다. 재시도도 401이면 더 반복하지
+      // 않는다(그 사이 네이티브가 재발급을 거절해 이미 로그아웃 흐름으로 넘어갔다).
+      const refreshedToken = await refreshAccessToken(token);
+      if (refreshedToken) {
+        response = await send(refreshedToken);
+      }
+    } else {
+      // 토큰이 아예 없으면 재발급할 대상도 없다 — 네이티브가 로그인 흐름으로 유도하도록 알린다.
+      postToNative({ type: "AUTH_EXPIRED" });
+    }
   }
 
   if (!response.ok) {
