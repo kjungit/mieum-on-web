@@ -75,9 +75,9 @@ export default function ScanPage() {
     setBarcodeNotFound(false);
     setBarcodeError(null);
     try {
-      const products = await searchProducts(token, { barcode: barcode.trim() });
-      if (products[0]) {
-        router.push(`/products/${products[0].id}`);
+      const { items } = await searchProducts(token, { barcode: barcode.trim() });
+      if (items[0]) {
+        router.push(`/products/${items[0].id}`);
       } else {
         setBarcodeNotFound(true);
       }

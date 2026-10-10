@@ -6,17 +6,42 @@ import { CircleCheck, CircleHelp } from "lucide-react";
 
 import { useAuth } from "@/lib/auth-context";
 import { getMyScans, type RawIngredientScanSummaryResponse } from "@/lib/api/ocr";
+import { LoadMoreButton } from "@/components/load-more-button";
 
 export default function ScansPage() {
   const { token } = useAuth();
   const [scans, setScans] = useState<RawIngredientScanSummaryResponse[]>([]);
+  const [page, setPage] = useState(0);
+  const [hasNext, setHasNext] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   useEffect(() => {
     if (!token) {
       return;
     }
-    getMyScans(token).then(setScans);
+    getMyScans(token).then((slice) => {
+      setScans(slice.items);
+      setHasNext(slice.hasNext);
+      setPage(0);
+    });
   }, [token]);
+
+  const loadMore = async () => {
+    if (!token) return;
+    setLoadingMore(true);
+    try {
+      const slice = await getMyScans(token, page + 1);
+      // 그사이 새로 촬영하면 다음 페이지가 한 칸씩 밀려 이미 받은 기록이 다시 올 수 있다 — 겹치는 건 뺀다.
+      setScans((current) => [
+        ...current,
+        ...slice.items.filter((item) => !current.some((existing) => existing.id === item.id)),
+      ]);
+      setHasNext(slice.hasNext);
+      setPage(page + 1);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
 
   return (
     <main className="flex flex-col gap-4 px-5 py-7 pb-16">
@@ -45,6 +70,8 @@ export default function ScansPage() {
           ))}
         </ul>
       )}
+
+      <LoadMoreButton hasNext={hasNext} loading={loadingMore} onClick={loadMore} />
     </main>
   );
 }

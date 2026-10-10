@@ -1,5 +1,5 @@
 import { apiFetch } from "@/lib/api";
-import type { NutritionResponse, ProductSource, ProductSummaryResponse } from "@/lib/api/types";
+import type { NutritionResponse, ProductSource, ProductSummaryResponse, SliceResponse } from "@/lib/api/types";
 
 export interface ProductIngredientResponse {
   id: number;
@@ -16,14 +16,15 @@ export interface ProductDetailResponse extends ProductSummaryResponse {
 
 export function searchProducts(
   token: string,
-  params: { keyword?: string; barcode?: string; category?: string } = {},
-): Promise<ProductSummaryResponse[]> {
+  params: { keyword?: string; barcode?: string; category?: string; page?: number } = {},
+): Promise<SliceResponse<ProductSummaryResponse>> {
   const query = new URLSearchParams();
   if (params.keyword) query.set("keyword", params.keyword);
   if (params.barcode) query.set("barcode", params.barcode);
   if (params.category) query.set("category", params.category);
+  if (params.page) query.set("page", String(params.page));
   const queryString = query.toString();
-  return apiFetch<ProductSummaryResponse[]>(`/api/products${queryString ? `?${queryString}` : ""}`, {
+  return apiFetch<SliceResponse<ProductSummaryResponse>>(`/api/products${queryString ? `?${queryString}` : ""}`, {
     token,
   });
 }
