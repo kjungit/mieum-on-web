@@ -9,6 +9,7 @@ import { useSelectedChild } from "@/lib/child-context";
 import { getCategories, searchProducts, type ProductCategoryResponse } from "@/lib/api/products";
 import type { ProductSummaryResponse } from "@/lib/api/types";
 import { toggleCompareTray, useCompareTray, COMPARE_TRAY_MAX } from "@/lib/compare-tray";
+import { LoadMoreButton } from "@/components/load-more-button";
 
 export default function SearchPage() {
   const { token } = useAuth();
@@ -17,6 +18,11 @@ export default function SearchPage() {
 
   const [keyword, setKeyword] = useState("");
   const [results, setResults] = useState<ProductSummaryResponse[]>([]);
+  const [page, setPage] = useState(0);
+  const [hasNext, setHasNext] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  // "더 보기"는 마지막으로 실행한 검색 조건으로 이어 받는다 — 입력창을 고친 채 누르면 다른 결과가 섞인다.
+  const [lastQuery, setLastQuery] = useState<{ keyword: string; category: string | null } | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   // 서버에 월령/알레르기 제외 검색 API가 아직 없어(design-file 578행 메모의 "검색 결과 필터"),
@@ -44,17 +50,21 @@ export default function SearchPage() {
     setIsSearching(true);
     setSearchError(null);
     try {
-      const products = await searchProducts(token, {
+      const slice = await searchProducts(token, {
         keyword: nextKeyword.trim() || undefined,
         category: nextCategory ?? undefined,
       });
       if (requestId !== latestRequest.current) return;
-      setResults(products);
+      setResults(slice.items);
+      setHasNext(slice.hasNext);
+      setPage(0);
+      setLastQuery({ keyword: nextKeyword.trim(), category: nextCategory });
       setHasSearched(true);
     } catch {
       if (requestId !== latestRequest.current) return;
       // 옛 결과를 남기면 새로 고른 칩 아래에 이전 카테고리 제품이 그대로 보인다.
       setResults([]);
+      setHasNext(false);
       setHasSearched(false);
       setSearchError("검색에 실패했어요. 잠시 후 다시 시도해주세요.");
     } finally {
@@ -63,6 +73,28 @@ export default function SearchPage() {
   };
 
   const handleSearch = () => runSearch(keyword, category);
+
+  const loadMore = async () => {
+    if (!token || !lastQuery) return;
+    const requestId = latestRequest.current;
+    setLoadingMore(true);
+    try {
+      const slice = await searchProducts(token, {
+        keyword: lastQuery.keyword || undefined,
+        category: lastQuery.category ?? undefined,
+        page: page + 1,
+      });
+      // 그사이 새 검색을 시작했으면 이전 검색의 다음 페이지를 붙이지 않는다.
+      if (requestId !== latestRequest.current) return;
+      setResults((current) => [...current, ...slice.items]);
+      setHasNext(slice.hasNext);
+      setPage(page + 1);
+    } catch {
+      if (requestId === latestRequest.current) setSearchError("검색 결과를 더 불러오지 못했어요. 잠시 후 다시 시도해주세요.");
+    } finally {
+      setLoadingMore(false);
+    }
+  };
 
   const handleCategory = (next: string) => {
     const nextCategory = category === next ? null : next;
@@ -75,6 +107,7 @@ export default function SearchPage() {
       setIsSearching(false);
       setSearchError(null);
       setResults([]);
+      setHasNext(false);
       setHasSearched(false);
     }
   };
@@ -180,6 +213,8 @@ export default function SearchPage() {
           );
         })}
       </ul>
+
+      <LoadMoreButton hasNext={hasSearched && hasNext} loading={loadingMore} onClick={loadMore} />
 
       {hasSearched && visibleResults.length === 0 ? (
         <Link

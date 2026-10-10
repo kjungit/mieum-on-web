@@ -1,5 +1,5 @@
 import { apiFetch } from "@/lib/api";
-import type { MatchStatus } from "@/lib/api/types";
+import type { MatchStatus, SliceResponse } from "@/lib/api/types";
 
 export interface RawIngredientScanItemResponse {
   id: number;
@@ -43,8 +43,8 @@ export function createScan(
   });
 }
 
-export function getMyScans(token: string): Promise<RawIngredientScanSummaryResponse[]> {
-  return apiFetch<RawIngredientScanSummaryResponse[]>("/api/ocr/scans", { token });
+export function getMyScans(token: string, page = 0): Promise<SliceResponse<RawIngredientScanSummaryResponse>> {
+  return apiFetch<SliceResponse<RawIngredientScanSummaryResponse>>(`/api/ocr/scans?page=${page}`, { token });
 }
 
 export function getScan(token: string, scanId: number): Promise<RawIngredientScanResponse> {

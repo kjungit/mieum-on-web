@@ -8,7 +8,7 @@ import { Star } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { useSelectedChild } from "@/lib/child-context";
 import { getProductDetail, type ProductDetailResponse } from "@/lib/api/products";
-import { addFavorite, listFavorites, removeFavorite, upsertRecentView } from "@/lib/api/activity";
+import { addFavorite, listFavoriteProductIds, removeFavorite, upsertRecentView } from "@/lib/api/activity";
 import {
   analyze,
   explain,
@@ -154,8 +154,8 @@ export default function ProductDetailPage() {
     }
     getProductDetail(token, productId).then(setProduct);
     upsertRecentView(token, productId).catch(() => {});
-    listFavorites(token)
-      .then((favorites) => setIsFavorite(favorites.some((favorite) => favorite.product.id === productId)))
+    listFavoriteProductIds(token)
+      .then((ids) => setIsFavorite(ids.includes(productId)))
       .catch(() => {});
   }, [token, productId]);
 
@@ -187,8 +187,8 @@ export default function ProductDetailPage() {
       setIsFavorite((current) => !current);
     } catch {
       // 처음 목록 조회가 실패해 상태가 어긋났을 수 있다 — 서버 기준으로 다시 맞춘다.
-      listFavorites(token)
-        .then((favorites) => setIsFavorite(favorites.some((favorite) => favorite.product.id === productId)))
+      listFavoriteProductIds(token)
+        .then((ids) => setIsFavorite(ids.includes(productId)))
         .catch(() => {});
     }
   };
