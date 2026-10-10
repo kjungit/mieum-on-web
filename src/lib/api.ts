@@ -1,7 +1,9 @@
 import { postToNative } from "@/lib/native-bridge";
+import { refreshAccessToken } from "@/lib/token-refresh";
 
 // mieum-on-server의 응답 규약(global.common.ApiResponse / global.exception.ErrorResponse)에 맞춘 타입.
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+const MAX_AUTH_RETRIES = 2;
 
 interface ApiSuccessBody<T> {
   success: true;
@@ -53,19 +55,36 @@ export async function apiFetch<T>(
   // 지정하지 않는다 — 브라우저가 boundary를 포함해 자동으로 설정해야 한다.
   const isFormData = typeof FormData !== "undefined" && body instanceof FormData;
 
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    ...init,
-    headers: {
-      ...(isFormData ? {} : { "Content-Type": "application/json" }),
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...headers,
-    },
-    body: isFormData ? (body as FormData) : body !== undefined ? JSON.stringify(body) : undefined,
-  });
+  const send = (accessToken: string | null | undefined) =>
+    fetch(`${API_BASE_URL}${path}`, {
+      ...init,
+      headers: {
+        ...(isFormData ? {} : { "Content-Type": "application/json" }),
+        ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        ...headers,
+      },
+      body: isFormData ? (body as FormData) : body !== undefined ? JSON.stringify(body) : undefined,
+    });
 
-  if (response.status === 401) {
-    // 만료/무효 토큰 — 네이티브가 재로그인 흐름으로 유도하도록 알림.
+  let response = await send(token);
+
+  if (response.status === 401 && !token) {
+    // 토큰이 아예 없으면 재발급할 대상도 없다 — 네이티브가 로그인 흐름으로 유도하도록 알린다.
     postToNative({ type: "AUTH_EXPIRED" });
+  }
+
+  // access 토큰 만료 — 새 토큰으로 다시 보낸다. 첫 재시도는 "이미 다른 요청이 받아 둔 토큰"일 수 있는데, 앱이
+  // 오래 백그라운드에 있었다면 그 토큰도 만료됐을 수 있다. 그래서 재시도도 401이면 그 토큰 기준으로 한 번 더
+  // 재발급받는다. 무한 반복을 막기 위해 재시도는 최대 MAX_AUTH_RETRIES번이고, 새 토큰을 못 받으면
+  // (네이티브가 재발급을 거절·실패) 즉시 멈춘다.
+  let usedToken = token;
+  for (let retry = 0; response.status === 401 && usedToken && retry < MAX_AUTH_RETRIES; retry++) {
+    const refreshedToken = await refreshAccessToken(usedToken);
+    if (!refreshedToken || refreshedToken === usedToken) {
+      break;
+    }
+    usedToken = refreshedToken;
+    response = await send(usedToken);
   }
 
   if (!response.ok) {
