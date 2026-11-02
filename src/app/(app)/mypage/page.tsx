@@ -233,16 +233,16 @@ export default function MyPage() {
         </button>
       </div>
 
-      {me ? (
-        <button
-          type="button"
-          onClick={() => openSheet("withdraw")}
-          className="mt-4 flex items-center gap-1.5 self-start text-[11px] font-medium text-text-secondary/70"
-        >
-          <UserX size={13} />
-          회원 탈퇴
-        </button>
-      ) : null}
+      <div className="mt-4 flex items-center gap-3 text-[11px] font-medium text-text-secondary/70">
+        <Link href="/privacy">개인정보처리방침</Link>
+        <Link href="/terms">이용약관</Link>
+        {me ? (
+          <button type="button" onClick={() => openSheet("withdraw")} className="ml-auto flex items-center gap-1.5">
+            <UserX size={13} />
+            회원 탈퇴
+          </button>
+        ) : null}
+      </div>
 
       <BottomSheet open={sheet === "nickname"} onClose={() => setSheet(null)}>
         <p className="mb-3 text-lg font-black tracking-tight">닉네임 변경</p>
