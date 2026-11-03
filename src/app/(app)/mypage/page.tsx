@@ -236,12 +236,11 @@ export default function MyPage() {
       <div className="mt-4 flex items-center gap-3 text-[11px] font-medium text-text-secondary/70">
         <Link href="/privacy">개인정보처리방침</Link>
         <Link href="/terms">이용약관</Link>
-        {me ? (
-          <button type="button" onClick={() => openSheet("withdraw")} className="ml-auto flex items-center gap-1.5">
-            <UserX size={13} />
-            회원 탈퇴
-          </button>
-        ) : null}
+        {/* 내 정보 조회가 실패해도 탈퇴는 할 수 있어야 한다(스토어 정책: 앱 안에서 계정 삭제). */}
+        <button type="button" onClick={() => openSheet("withdraw")} className="ml-auto flex items-center gap-1.5">
+          <UserX size={13} />
+          회원 탈퇴
+        </button>
       </div>
 
       <BottomSheet open={sheet === "nickname"} onClose={() => setSheet(null)}>

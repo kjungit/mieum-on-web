@@ -5,6 +5,9 @@ import { useEffect, useState } from "react";
 import { Search } from "lucide-react";
 
 import { useAuth } from "@/lib/auth-context";
+import { BackButton } from "@/components/back-button";
+import { LoadError } from "@/components/load-error";
+import { errorMessage } from "@/lib/api";
 import { useSelectedChild } from "@/lib/child-context";
 import { getAllergies, upsertAllergy, type ChildAllergyResponse } from "@/lib/api/children";
 import { searchIngredients } from "@/lib/api/ingredients";
@@ -61,12 +64,20 @@ export default function ChildAllergiesPage() {
   const [keyword, setKeyword] = useState("");
   const [results, setResults] = useState<IngredientSummaryResponse[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  // 목록을 못 불러온 채로 두면 등록된 알레르기가 "없는" 것처럼 보인다 — 실패를 따로 알린다.
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const loadAllergies = () => {
     if (!token || Number.isNaN(childId)) {
       return;
     }
-    getAllergies(token, childId).then(setAllergies);
+    getAllergies(token, childId)
+      .then((list) => {
+        setAllergies(list);
+        setLoadError(null);
+      })
+      .catch((error) => setLoadError(errorMessage(error, "등록된 알레르기를 불러오지 못했어요.")));
   };
 
   useEffect(loadAllergies, [token, childId]);
@@ -76,8 +87,11 @@ export default function ChildAllergiesPage() {
       return;
     }
     setIsSearching(true);
+    setActionError(null);
     try {
       setResults(await searchIngredients(token, keyword));
+    } catch (error) {
+      setActionError(errorMessage(error, "성분을 검색하지 못했어요."));
     } finally {
       setIsSearching(false);
     }
@@ -87,14 +101,24 @@ export default function ChildAllergiesPage() {
     if (!token) {
       return;
     }
-    await upsertAllergy(token, childId, ingredientId, status);
-    loadAllergies();
+    setActionError(null);
+    try {
+      await upsertAllergy(token, childId, ingredientId, status);
+      loadAllergies();
+    } catch (error) {
+      setActionError(errorMessage(error, "저장하지 못했어요. 다시 시도해주세요."));
+    }
   };
 
   const registeredIds = new Set(allergies.map((a) => a.ingredientId));
 
   return (
-    <main className="flex flex-col px-5 py-6 pb-16">
+    <main className="flex flex-col px-5 py-4 pb-16">
+      <div className="mb-2">
+        <BackButton fallbackHref="/children" />
+      </div>
+      {loadError ? <LoadError className="mb-4" message={loadError} onRetry={loadAllergies} /> : null}
+      {actionError ? <p className="mb-4 text-sm text-text-secondary">{actionError}</p> : null}
       <p className="mb-1.5 text-xl font-black tracking-tight">
         {routeChild ? `${routeChild.name}의 알레르기` : "알레르기 관리"}
       </p>

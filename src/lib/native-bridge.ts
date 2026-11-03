@@ -28,7 +28,14 @@ export function postToNative(message: WebToNativeMessage): void {
 export function onNativeMessage(
   handler: (message: NativeToWebMessage) => void,
 ): () => void {
+  // 같은 이벤트 객체가 window와 document 양쪽으로 들어오면 한 번만 처리한다(예전 앱 빌드는 양쪽에 보냈다 —
+  // 촬영 한 번에 업로드가 두 번 나갔다).
+  const handled = new WeakSet<Event>();
   const listener = (event: MessageEvent | Event) => {
+    if (handled.has(event)) {
+      return;
+    }
+    handled.add(event);
     const data = (event as MessageEvent).data;
     if (typeof data !== "string") {
       return;

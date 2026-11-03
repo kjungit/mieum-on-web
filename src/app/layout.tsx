@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "미음온",
-  description: "미음온 앱 웹뷰 콘텐츠",
+  title: "미음:ON",
+  description: "미음:ON 앱 웹뷰 콘텐츠",
   // 앱 WebView 전용 화면이라 검색 노출이 의미 없다. 약관·개인정보처리방침은 링크로만 접근한다.
   robots: { index: false, follow: false },
 };

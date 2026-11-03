@@ -7,7 +7,9 @@ import { useAuth } from "@/lib/auth-context";
 import { useSelectedChild } from "@/lib/child-context";
 import { deleteChild, getChild, updateChild, type ChildResponse } from "@/lib/api/children";
 import type { Gender } from "@/lib/api/types";
-import { ApiError } from "@/lib/api";
+import { ApiError, errorMessage } from "@/lib/api";
+import { BackButton } from "@/components/back-button";
+import { LoadError } from "@/components/load-error";
 
 const GENDER_OPTIONS: { value: Gender | ""; label: string }[] = [
   { value: "FEMALE", label: "여아" },
@@ -28,18 +30,23 @@ export default function EditChildPage() {
   const [gender, setGender] = useState<Gender | "">("");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     if (!token || Number.isNaN(childId)) {
       return;
     }
-    getChild(token, childId).then((data) => {
-      setChild(data);
-      setName(data.name);
-      setBirthDate(data.birthDate);
-      setGender(data.gender ?? "");
-    });
-  }, [token, childId]);
+    Promise.resolve().then(() => setLoadError(null));
+    getChild(token, childId)
+      .then((data) => {
+        setChild(data);
+        setName(data.name);
+        setBirthDate(data.birthDate);
+        setGender(data.gender ?? "");
+      })
+      .catch((err) => setLoadError(errorMessage(err, "아이 정보를 불러오지 못했어요.")));
+  }, [token, childId, attempt]);
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
@@ -66,21 +73,34 @@ export default function EditChildPage() {
     if (!window.confirm(`${child?.name ?? "이 아이"} 정보를 삭제할까요? 이 작업은 되돌릴 수 없어요.`)) {
       return;
     }
-    await deleteChild(token, childId);
-    await refresh();
-    router.push("/children");
+    setError(null);
+    try {
+      await deleteChild(token, childId);
+      await refresh();
+      router.push("/children");
+    } catch (err) {
+      setError(errorMessage(err, "삭제에 실패했어요."));
+    }
   };
 
   if (!child) {
     return (
-      <main className="px-6 py-8">
-        <p className="text-sm text-text-secondary">불러오는 중…</p>
+      <main className="px-5 py-4">
+        <BackButton fallbackHref="/children" />
+        {loadError ? (
+          <LoadError className="mt-4" message={loadError} onRetry={() => setAttempt((n) => n + 1)} />
+        ) : (
+          <p className="mt-4 text-sm text-text-secondary">불러오는 중…</p>
+        )}
       </main>
     );
   }
 
   return (
-    <main className="flex flex-col px-5 py-8 pb-16">
+    <main className="flex flex-col px-5 py-4 pb-16">
+      <div className="mb-2">
+        <BackButton fallbackHref="/children" />
+      </div>
       <p className="mb-5 text-xl font-black tracking-tight">아이 정보 수정</p>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-3">
