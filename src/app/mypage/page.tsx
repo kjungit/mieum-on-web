@@ -301,8 +301,8 @@ export default function MyPage() {
       <BottomSheet open={sheet === "withdraw"} onClose={() => setSheet(null)}>
         <p className="mb-2 text-lg font-black tracking-tight">회원 탈퇴</p>
         <p className="text-[12.5px] leading-relaxed text-text-secondary">
-          탈퇴하면 바로 로그아웃되고 다시 로그인할 수 없어요. 등록한 아이 정보와 기록은 탈퇴 후 보관 기간이
-          지나면 완전히 삭제돼요.
+          탈퇴하면 바로 로그아웃되고 이 계정으로는 다시 로그인할 수 없어요. 같은 이메일로 새로 가입할 수
+          있지만 지금 기록은 이어지지 않아요. 등록한 아이 정보와 기록은 보관 기간이 지나면 완전히 삭제돼요.
         </p>
         {formError ? <p className="mt-2 text-xs text-[var(--grade-r)]">{formError}</p> : null}
         <button
