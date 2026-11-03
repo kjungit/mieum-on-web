@@ -10,6 +10,12 @@ export type NutritionBasis = "PER_100G" | "PER_SERVING" | "PER_TOTAL";
 export type MatchStatus = "MATCHED" | "UNMATCHED";
 export type IngredientType = "ALLERGEN" | "ADDITIVE" | "NUTRIENT" | "ETC";
 
+// 계속 늘어나는 목록(제품 검색·즐겨찾기·촬영 기록)의 한 페이지. 전체 개수 없이 다음 페이지가 있는지만 알려준다.
+export interface SliceResponse<T> {
+  items: T[];
+  hasNext: boolean;
+}
+
 export interface EvidenceResponse {
   id: number;
   title: string;
