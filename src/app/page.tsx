@@ -7,7 +7,13 @@ import { Search, Camera, Star } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { useSelectedChild } from "@/lib/child-context";
 import { getAllergies, type ChildAllergyResponse } from "@/lib/api/children";
-import { addFavorite, listFavorites, removeFavorite, listRecentViews, type RecentViewResponse } from "@/lib/api/activity";
+import {
+  addFavorite,
+  listFavoriteProductIds,
+  removeFavorite,
+  listRecentViews,
+  type RecentViewResponse,
+} from "@/lib/api/activity";
 import { analyze, type AnalysisResponse } from "@/lib/api/analysis";
 import { useCompareTray, COMPARE_TRAY_MAX } from "@/lib/compare-tray";
 import { GRADE_META, toOverallGrade, type OverallGrade } from "@/lib/grade";
@@ -36,8 +42,8 @@ export default function Home() {
     listRecentViews(token)
       .then((list) => setRecentViews(list.slice(0, 5)))
       .catch(() => setRecentViews([]));
-    listFavorites(token)
-      .then((list) => setFavoriteIds(new Set(list.map((f) => f.product.id))))
+    listFavoriteProductIds(token)
+      .then((ids) => setFavoriteIds(new Set(ids)))
       .catch(() => {});
   }, [token]);
 
@@ -94,8 +100,8 @@ export default function Home() {
       });
     } catch {
       // 처음 목록 조회가 실패해 상태가 어긋났을 수 있다 — 서버 기준으로 다시 맞춘다.
-      listFavorites(token)
-        .then((list) => setFavoriteIds(new Set(list.map((f) => f.product.id))))
+      listFavoriteProductIds(token)
+        .then((ids) => setFavoriteIds(new Set(ids)))
         .catch(() => {});
     }
   };

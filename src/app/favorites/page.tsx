@@ -6,26 +6,50 @@ import { Star, X } from "lucide-react";
 
 import { useAuth } from "@/lib/auth-context";
 import { listFavorites, removeFavorite, type FavoriteResponse } from "@/lib/api/activity";
+import { LoadMoreButton } from "@/components/load-more-button";
 
 export default function FavoritesPage() {
   const { token } = useAuth();
   const [favorites, setFavorites] = useState<FavoriteResponse[]>([]);
+  const [page, setPage] = useState(0);
+  const [hasNext, setHasNext] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
 
-  const load = () => {
+  useEffect(() => {
     if (!token) {
       return;
     }
-    listFavorites(token).then(setFavorites);
+    listFavorites(token).then((slice) => {
+      setFavorites(slice.items);
+      setHasNext(slice.hasNext);
+      setPage(0);
+    });
+  }, [token]);
+
+  const loadMore = async () => {
+    if (!token) return;
+    setLoadingMore(true);
+    try {
+      const slice = await listFavorites(token, page + 1);
+      // 그사이 지운 항목이 있으면 다음 페이지가 한 칸씩 당겨져 이미 받은 항목이 다시 올 수 있다 — 겹치는 건 뺀다.
+      setFavorites((current) => [
+        ...current,
+        ...slice.items.filter((item) => !current.some((existing) => existing.id === item.id)),
+      ]);
+      setHasNext(slice.hasNext);
+      setPage(page + 1);
+    } finally {
+      setLoadingMore(false);
+    }
   };
 
-  useEffect(load, [token]);
-
+  // 목록을 처음부터 다시 받으면 펼쳐 둔 페이지가 접힌다 — 지운 항목만 화면에서 뺀다.
   const handleRemove = async (productId: number) => {
     if (!token) {
       return;
     }
     await removeFavorite(token, productId);
-    load();
+    setFavorites((current) => current.filter((favorite) => favorite.product.id !== productId));
   };
 
   return (
@@ -60,6 +84,8 @@ export default function FavoritesPage() {
           ))}
         </ul>
       )}
+
+      <LoadMoreButton hasNext={hasNext} loading={loadingMore} onClick={loadMore} />
     </main>
   );
 }
