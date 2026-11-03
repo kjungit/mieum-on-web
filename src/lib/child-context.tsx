@@ -11,6 +11,8 @@ import {
 
 import { useAuth } from "@/lib/auth-context";
 import { getMyChildren, type ChildResponse } from "@/lib/api/children";
+import { errorMessage } from "@/lib/api";
+import { LoadError } from "@/components/load-error";
 
 const STORAGE_KEY = "mieum-on:selectedChildId";
 
@@ -45,6 +47,7 @@ export function ChildProvider({ children: node }: { children: ReactNode }) {
   const [childList, setChildList] = useState<ChildResponse[]>([]);
   const [selectedChildId, setSelectedChildId] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
     if (!token) {
@@ -53,6 +56,7 @@ export function ChildProvider({ children: node }: { children: ReactNode }) {
       return;
     }
     setIsLoading(true);
+    setLoadError(null);
     try {
       const list = await getMyChildren(token);
       setChildList(list);
@@ -66,6 +70,8 @@ export function ChildProvider({ children: node }: { children: ReactNode }) {
         }
         return list[0]?.id ?? null;
       });
+    } catch (error) {
+      setLoadError(errorMessage(error, "아이 정보를 불러오지 못했어요."));
     } finally {
       setIsLoading(false);
     }
@@ -83,6 +89,16 @@ export function ChildProvider({ children: node }: { children: ReactNode }) {
   };
 
   const selectedChild = childList.find((child) => child.id === selectedChildId) ?? null;
+
+  // 아이 목록은 거의 모든 화면이 쓴다. 처음 불러오기에 실패한 채로 두면 아이가 없는 것처럼 "아이 등록하기"가
+  // 떠서, 이미 등록한 보호자가 같은 아이를 또 등록하게 된다 — 화면 대신 다시 시도를 보여준다.
+  if (loadError && childList.length === 0) {
+    return (
+      <main className="px-5 py-10">
+        <LoadError message={loadError} onRetry={() => void refresh()} />
+      </main>
+    );
+  }
 
   return (
     <ChildContext.Provider value={{ children: childList, selectedChild, isLoading, selectChild, refresh }}>

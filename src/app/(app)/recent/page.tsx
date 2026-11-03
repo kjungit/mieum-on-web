@@ -6,23 +6,36 @@ import { Clock } from "lucide-react";
 
 import { useAuth } from "@/lib/auth-context";
 import { listRecentViews, type RecentViewResponse } from "@/lib/api/activity";
+import { errorMessage } from "@/lib/api";
+import { LoadError } from "@/components/load-error";
 
 export default function RecentViewsPage() {
   const { token } = useAuth();
-  const [views, setViews] = useState<RecentViewResponse[]>([]);
+  const [views, setViews] = useState<RecentViewResponse[] | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     if (!token) {
       return;
     }
-    listRecentViews(token).then(setViews);
-  }, [token]);
+    Promise.resolve().then(() => setLoadError(null));
+    listRecentViews(token)
+      .then(setViews)
+      .catch((error) => setLoadError(errorMessage(error)));
+  }, [token, attempt]);
 
   return (
     <main className="flex flex-col gap-5 px-5 py-7">
       <h1 className="text-[17px] font-black tracking-tight">최근 본 제품</h1>
 
-      {views.length === 0 ? (
+      {views === null ? (
+        loadError ? (
+          <LoadError message={loadError} onRetry={() => setAttempt((n) => n + 1)} />
+        ) : (
+          <p className="text-sm text-text-secondary">불러오는 중…</p>
+        )
+      ) : views.length === 0 ? (
         <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-background-selected py-14 text-center">
           <Clock size={28} className="text-text-secondary" strokeWidth={1.5} />
           <p className="text-[12.5px] leading-relaxed text-text-secondary">

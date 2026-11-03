@@ -18,6 +18,9 @@ import {
 } from "@/lib/api/analysis";
 import type { EvidenceResponse, ProductSummaryResponse } from "@/lib/api/types";
 import { GradeBadge } from "@/components/severity-badge";
+import { BackButton } from "@/components/back-button";
+import { LoadError } from "@/components/load-error";
+import { errorMessage } from "@/lib/api";
 import { EvidenceSheet } from "@/components/evidence-sheet";
 import { toggleCompareTray, useCompareTray, COMPARE_TRAY_MAX } from "@/lib/compare-tray";
 import { GRADE_META, severityToGrade, toOverallGrade, worseGrade, type OverallGrade } from "@/lib/grade";
@@ -147,29 +150,44 @@ export default function ProductDetailPage() {
   const [isExplaining, setIsExplaining] = useState(false);
   const [alternatives, setAlternatives] = useState<ProductSummaryResponse[] | null>(null);
   const [activeRow, setActiveRow] = useState<AnalysisRow | null>(null);
+  const [productError, setProductError] = useState<string | null>(null);
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
+  const [explainError, setExplainError] = useState<string | null>(null);
+  const [alternativesError, setAlternativesError] = useState<string | null>(null);
+  const [isFindingAlternatives, setIsFindingAlternatives] = useState(false);
+  const [productAttempt, setProductAttempt] = useState(0);
+  const [analysisAttempt, setAnalysisAttempt] = useState(0);
 
   useEffect(() => {
     if (!token || Number.isNaN(productId)) {
       return;
     }
-    getProductDetail(token, productId).then(setProduct);
+    Promise.resolve().then(() => setProductError(null));
+    getProductDetail(token, productId)
+      .then(setProduct)
+      .catch((error) => setProductError(errorMessage(error, "제품 정보를 불러오지 못했어요.")));
     upsertRecentView(token, productId).catch(() => {});
     listFavoriteProductIds(token)
       .then((ids) => setIsFavorite(ids.includes(productId)))
       .catch(() => {});
-  }, [token, productId]);
+  }, [token, productId, productAttempt]);
 
   useEffect(() => {
     if (!token || !selectedChild || Number.isNaN(productId)) {
       Promise.resolve().then(() => setAnalysis(null));
       return;
     }
-    analyze(token, selectedChild.id, productId).then(setAnalysis);
+    analyze(token, selectedChild.id, productId)
+      .then(setAnalysis)
+      .catch((error) => setAnalysisError(errorMessage(error, "분석하지 못했어요.")));
     Promise.resolve().then(() => {
+      setAnalysisError(null);
       setExplanation(null);
+      setExplainError(null);
       setAlternatives(null);
+      setAlternativesError(null);
     });
-  }, [token, selectedChild, productId]);
+  }, [token, selectedChild, productId, analysisAttempt]);
 
   const analysisRows = useMemo(() => (analysis ? buildAnalysisRows(analysis) : []), [analysis]);
   const overallGrade = analysis ? toOverallGrade(analysis.overallGrade, analysis.needsReview) : null;
@@ -196,8 +214,11 @@ export default function ProductDetailPage() {
   const handleExplain = async () => {
     if (!token || !selectedChild) return;
     setIsExplaining(true);
+    setExplainError(null);
     try {
       setExplanation(await explain(token, selectedChild.id, productId));
+    } catch (error) {
+      setExplainError(errorMessage(error, "AI 설명을 불러오지 못했어요. 잠시 후 다시 시도해주세요."));
     } finally {
       setIsExplaining(false);
     }
@@ -205,13 +226,30 @@ export default function ProductDetailPage() {
 
   const handleAlternatives = async () => {
     if (!token || !selectedChild) return;
-    setAlternatives(await getAlternatives(token, selectedChild.id, productId));
+    setIsFindingAlternatives(true);
+    setAlternativesError(null);
+    try {
+      setAlternatives(await getAlternatives(token, selectedChild.id, productId));
+    } catch (error) {
+      setAlternativesError(errorMessage(error, "비슷한 제품을 찾지 못했어요."));
+    } finally {
+      setIsFindingAlternatives(false);
+    }
   };
 
   if (!product) {
     return (
-      <main className="px-6 py-8">
-        <p className="text-sm text-text-secondary">불러오는 중…</p>
+      <main className="px-5 py-4">
+        <BackButton />
+        {productError ? (
+          <LoadError
+            className="mt-4"
+            message={productError}
+            onRetry={() => setProductAttempt((attempt) => attempt + 1)}
+          />
+        ) : (
+          <p className="mt-4 text-sm text-text-secondary">불러오는 중…</p>
+        )}
       </main>
     );
   }
@@ -235,7 +273,10 @@ export default function ProductDetailPage() {
 
   return (
     <main className="flex flex-col pb-10">
-      <div className="px-5 pt-6">
+      <div className="px-5 pt-2">
+        <BackButton />
+      </div>
+      <div className="px-5 pt-2">
         {product.imageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -283,7 +324,15 @@ export default function ProductDetailPage() {
           </Link>
         </div>
       ) : !analysis ? (
-        <p className="mx-5 mt-5 text-sm text-text-secondary">분석 중…</p>
+        analysisError ? (
+          <LoadError
+            className="mx-5 mt-5"
+            message={analysisError}
+            onRetry={() => setAnalysisAttempt((attempt) => attempt + 1)}
+          />
+        ) : (
+          <p className="mx-5 mt-5 text-sm text-text-secondary">분석 중…</p>
+        )
       ) : (
         <>
           {overallGrade && overallMeta ? (
@@ -309,6 +358,7 @@ export default function ProductDetailPage() {
                 >
                   {isExplaining ? "AI 설명 준비 중…" : explanation ? "AI 설명 다시 보기" : "AI 설명 보기 ›"}
                 </button>
+                {explainError ? <p className="mt-2 text-[11px] text-text-secondary">{explainError}</p> : null}
               </div>
             </div>
           ) : null}
@@ -424,10 +474,12 @@ export default function ProductDetailPage() {
           <button
             type="button"
             onClick={handleAlternatives}
-            className="w-full rounded-2xl bg-brand py-3.5 text-sm font-bold text-white"
+            disabled={isFindingAlternatives}
+            className="w-full rounded-2xl bg-brand py-3.5 text-sm font-bold text-white disabled:opacity-60"
           >
-            비슷한 제품 찾아보기
+            {isFindingAlternatives ? "찾는 중…" : "비슷한 제품 찾아보기"}
           </button>
+          {alternativesError ? <p className="mt-3 text-sm text-text-secondary">{alternativesError}</p> : null}
           {alternatives ? (
             <ul className="mt-3 flex flex-col gap-2">
               {alternatives.length === 0 ? (

@@ -7,6 +7,8 @@ import { CircleCheck, CircleHelp } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { getMyScans, type RawIngredientScanSummaryResponse } from "@/lib/api/ocr";
 import { LoadMoreButton } from "@/components/load-more-button";
+import { LoadError } from "@/components/load-error";
+import { errorMessage } from "@/lib/api";
 
 export default function ScansPage() {
   const { token } = useAuth();
@@ -14,17 +16,24 @@ export default function ScansPage() {
   const [page, setPage] = useState(0);
   const [hasNext, setHasNext] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     if (!token) {
       return;
     }
-    getMyScans(token).then((slice) => {
-      setScans(slice.items);
-      setHasNext(slice.hasNext);
-      setPage(0);
-    });
-  }, [token]);
+    Promise.resolve().then(() => setLoadError(null));
+    getMyScans(token)
+      .then((slice) => {
+        setScans(slice.items);
+        setHasNext(slice.hasNext);
+        setPage(0);
+        setLoaded(true);
+      })
+      .catch((error) => setLoadError(errorMessage(error)));
+  }, [token, attempt]);
 
   const loadMore = async () => {
     if (!token) return;
@@ -47,7 +56,13 @@ export default function ScansPage() {
     <main className="flex flex-col gap-4 px-5 py-7 pb-16">
       <h1 className="text-lg font-bold">촬영 기록</h1>
 
-      {scans.length === 0 ? (
+      {!loaded ? (
+        loadError ? (
+          <LoadError message={loadError} onRetry={() => setAttempt((n) => n + 1)} />
+        ) : (
+          <p className="text-sm text-text-secondary">불러오는 중…</p>
+        )
+      ) : scans.length === 0 ? (
         <p className="text-sm text-text-secondary">아직 촬영한 기록이 없어요.</p>
       ) : (
         <ul className="overflow-hidden rounded-2xl border border-background-selected">

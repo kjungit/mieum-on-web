@@ -8,6 +8,7 @@ import { useSelectedChild } from "@/lib/child-context";
 import { registerChild } from "@/lib/api/children";
 import type { Gender } from "@/lib/api/types";
 import { ApiError } from "@/lib/api";
+import { BackButton } from "@/components/back-button";
 
 const GENDER_OPTIONS: { value: Gender | ""; label: string }[] = [
   { value: "FEMALE", label: "여아" },
@@ -50,7 +51,10 @@ export default function NewChildPage() {
   };
 
   return (
-    <main className="flex flex-col px-5 py-8 pb-16">
+    <main className="flex flex-col px-5 py-4 pb-16">
+      <div className="mb-2">
+        <BackButton />
+      </div>
       <p className="mb-1.5 text-xl font-black tracking-tight">아이 등록</p>
       <p className="mb-5 text-xs leading-relaxed text-text-secondary">
         월령은 직접 입력하지 않고 생년월일로 매번 자동 계산해요.

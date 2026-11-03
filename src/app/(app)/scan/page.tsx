@@ -111,7 +111,6 @@ export default function ScanPage() {
         >
           <ScanIcon size={14} />
           원재료 촬영
-          <span className="text-[9px] font-medium opacity-50">P0</span>
         </button>
         <button
           type="button"
@@ -121,8 +120,7 @@ export default function ScanPage() {
           }`}
         >
           <Barcode size={14} />
-          바코드 스캔
-          <span className="text-[9px] font-medium opacity-50">P1</span>
+          바코드 번호로 찾기
         </button>
       </div>
 

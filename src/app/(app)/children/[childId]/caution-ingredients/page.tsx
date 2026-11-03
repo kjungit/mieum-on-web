@@ -5,6 +5,9 @@ import { useEffect, useState } from "react";
 import { Search } from "lucide-react";
 
 import { useAuth } from "@/lib/auth-context";
+import { BackButton } from "@/components/back-button";
+import { LoadError } from "@/components/load-error";
+import { errorMessage } from "@/lib/api";
 import {
   addCautionIngredient,
   getCautionIngredients,
@@ -22,12 +25,29 @@ export default function ChildCautionIngredientsPage() {
   const [cautionIngredients, setCautionIngredients] = useState<ChildCautionIngredientResponse[]>([]);
   const [keyword, setKeyword] = useState("");
   const [results, setResults] = useState<IngredientSummaryResponse[]>([]);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const load = () => {
     if (!token || Number.isNaN(childId)) {
       return;
     }
-    getCautionIngredients(token, childId).then(setCautionIngredients);
+    getCautionIngredients(token, childId)
+      .then((list) => {
+        setCautionIngredients(list);
+        setLoadError(null);
+      })
+      .catch((error) => setLoadError(errorMessage(error, "지정한 주의 성분을 불러오지 못했어요.")));
+  };
+
+  // 추가·삭제·검색이 실패하면 아무 반응 없이 끝나지 않도록 안내한다.
+  const run = async (action: () => Promise<void>, fallback: string) => {
+    setActionError(null);
+    try {
+      await action();
+    } catch (error) {
+      setActionError(errorMessage(error, fallback));
+    }
   };
 
   useEffect(load, [token, childId]);
@@ -36,30 +56,37 @@ export default function ChildCautionIngredientsPage() {
     if (!token) {
       return;
     }
-    setResults(await searchIngredients(token, keyword));
+    await run(async () => setResults(await searchIngredients(token, keyword)), "성분을 검색하지 못했어요.");
   };
 
   const handleAdd = async (ingredientId: number) => {
     if (!token) {
       return;
     }
-    await addCautionIngredient(token, childId, ingredientId);
-    load();
+    await run(async () => {
+      await addCautionIngredient(token, childId, ingredientId);
+      load();
+    }, "추가하지 못했어요. 다시 시도해주세요.");
   };
 
   const handleRemove = async (ingredientId: number) => {
     if (!token) {
       return;
     }
-    await removeCautionIngredient(token, childId, ingredientId);
-    load();
+    await run(async () => {
+      await removeCautionIngredient(token, childId, ingredientId);
+      load();
+    }, "삭제하지 못했어요. 다시 시도해주세요.");
   };
 
   const isRegistered = (ingredientId: number) =>
     cautionIngredients.some((item) => item.ingredientId === ingredientId);
 
   return (
-    <main className="flex flex-col gap-6 px-5 py-7">
+    <main className="flex flex-col gap-6 px-5 py-4">
+      <BackButton fallbackHref="/children" />
+      {loadError ? <LoadError message={loadError} onRetry={load} /> : null}
+      {actionError ? <p className="text-sm text-text-secondary">{actionError}</p> : null}
       <div>
         <h1 className="text-[17px] font-black tracking-tight">주의 성분 직접 지정</h1>
         <p className="mt-2 rounded-2xl bg-background-element p-4 text-[11.5px] leading-relaxed text-text-secondary">

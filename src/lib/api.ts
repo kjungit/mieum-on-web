@@ -38,6 +38,35 @@ export class ApiError extends Error {
   }
 }
 
+// 화면에 띄울 오류 문구. 서버가 준 안내 문구(ApiError)가 있으면 그것을, 네트워크 실패 등이면 기본 문구를 쓴다.
+export function errorMessage(error: unknown, fallback = "정보를 불러오지 못했어요."): string {
+  return error instanceof ApiError && error.message ? error.message : fallback;
+}
+
+// 게이트웨이(502·504 HTML)나 빈 본문처럼 우리 서버의 JSON 오류 형식이 아닌 응답도 ApiError로 바꾼다. 그대로
+// response.json()을 부르면 SyntaxError가 나서 상태 코드도 알 수 없다.
+async function readErrorBody(response: Response): Promise<ApiErrorBody> {
+  const fallback: ApiErrorBody = {
+    status: response.status,
+    code: `HTTP_${response.status}`,
+    message:
+      response.status >= 500
+        ? "서버에 잠시 문제가 있어요. 잠시 후 다시 시도해주세요."
+        : "요청을 처리하지 못했어요. 다시 시도해주세요.",
+    errors: [],
+    timestamp: new Date().toISOString(),
+  };
+  try {
+    const body = (await response.json()) as Partial<ApiErrorBody>;
+    if (body && typeof body.message === "string") {
+      return { ...fallback, ...body, errors: body.errors ?? [] };
+    }
+  } catch {
+    // JSON이 아니면 기본 문구를 쓴다.
+  }
+  return fallback;
+}
+
 interface ApiFetchOptions extends Omit<RequestInit, "body"> {
   token?: string | null;
   body?: unknown;
@@ -88,8 +117,7 @@ export async function apiFetch<T>(
   }
 
   if (!response.ok) {
-    const errorBody = (await response.json()) as ApiErrorBody;
-    throw new ApiError(errorBody);
+    throw new ApiError(await readErrorBody(response));
   }
 
   // 삭제 등 ResponseEntity<Void> 엔드포인트는 204/본문 없음으로 응답한다.
