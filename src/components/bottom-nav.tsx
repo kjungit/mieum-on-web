@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Home, Search, Scan, UserRound } from "lucide-react";
 
 const ITEMS = [
-  { href: "/", label: "홈", icon: "🏠" },
-  { href: "/search", label: "탐색", icon: "🔍" },
-  { href: "/scan", label: "촬영", icon: "📷" },
-  { href: "/mypage", label: "마이", icon: "🙋" },
+  { href: "/", label: "홈", Icon: Home },
+  { href: "/search", label: "탐색", Icon: Search },
+  { href: "/scan", label: "촬영", Icon: Scan },
+  { href: "/mypage", label: "마이", Icon: UserRound },
 ] as const;
 
 function isActive(pathname: string, href: string): boolean {
@@ -20,20 +21,24 @@ function isActive(pathname: string, href: string): boolean {
 export function BottomNav() {
   const pathname = usePathname();
 
+  if (pathname === "/onboarding") {
+    return null;
+  }
+
   return (
     <nav className="sticky bottom-0 z-10 flex border-t border-background-selected bg-background">
-      {ITEMS.map((item) => {
-        const active = isActive(pathname, item.href);
+      {ITEMS.map(({ href, label, Icon }) => {
+        const active = isActive(pathname, href);
         return (
           <Link
-            key={item.href}
-            href={item.href}
-            className={`flex flex-1 flex-col items-center gap-1 py-2 text-xs ${
-              active ? "text-brand font-medium" : "text-text-secondary"
+            key={href}
+            href={href}
+            className={`flex flex-1 flex-col items-center gap-1 py-2.5 text-[11px] font-medium ${
+              active ? "text-brand" : "text-text-secondary"
             }`}
           >
-            <span className="text-lg leading-none">{item.icon}</span>
-            {item.label}
+            <Icon size={22} strokeWidth={active ? 2.4 : 1.8} />
+            {label}
           </Link>
         );
       })}

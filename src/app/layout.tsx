@@ -1,15 +1,11 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import type { Metadata, Viewport } from "next";
+import { Geist_Mono, Noto_Sans_KR } from "next/font/google";
 import "./globals.css";
 
-import { AuthProvider } from "@/lib/auth-context";
-import { ChildProvider } from "@/lib/child-context";
-import { WebViewGate } from "@/components/webview-gate";
-import { BottomNav } from "@/components/bottom-nav";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const notoSansKr = Noto_Sans_KR({
+  variable: "--font-noto-sans-kr",
   subsets: ["latin"],
+  weight: ["400", "500", "700", "900"],
 });
 
 const geistMono = Geist_Mono({
@@ -20,26 +16,26 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "미음온",
   description: "미음온 앱 웹뷰 콘텐츠",
+  // 앱 WebView 전용 화면이라 검색 노출이 의미 없다. 약관·개인정보처리방침은 링크로만 접근한다.
+  robots: { index: false, follow: false },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#FAF9F6" },
+    { media: "(prefers-color-scheme: dark)", color: "#14171A" },
+  ],
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="ko"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${notoSansKr.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-background text-foreground">
-        <AuthProvider>
-          <WebViewGate>
-            <ChildProvider>
-              <div className="flex min-h-screen flex-1 flex-col">
-                <div className="flex-1">{children}</div>
-                <BottomNav />
-              </div>
-            </ChildProvider>
-          </WebViewGate>
-        </AuthProvider>
-      </body>
+      <body className="min-h-full flex flex-col bg-background text-foreground">{children}</body>
     </html>
   );
 }
