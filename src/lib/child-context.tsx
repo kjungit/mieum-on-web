@@ -71,7 +71,7 @@ export function ChildProvider({ children: node }: { children: ReactNode }) {
         return list[0]?.id ?? null;
       });
     } catch (error) {
-      setLoadError(errorMessage(error, "아이 정보를 불러오지 못했어요."));
+      setLoadError(errorMessage(error, "프로필 정보를 불러오지 못했어요."));
     } finally {
       setIsLoading(false);
     }
@@ -90,8 +90,8 @@ export function ChildProvider({ children: node }: { children: ReactNode }) {
 
   const selectedChild = childList.find((child) => child.id === selectedChildId) ?? null;
 
-  // 아이 목록은 거의 모든 화면이 쓴다. 처음 불러오기에 실패한 채로 두면 아이가 없는 것처럼 "아이 등록하기"가
-  // 떠서, 이미 등록한 보호자가 같은 아이를 또 등록하게 된다 — 화면 대신 다시 시도를 보여준다.
+  // 프로필 목록은 거의 모든 화면이 쓴다. 처음 불러오기에 실패한 채로 두면 프로필이 없는 것처럼 "프로필 등록하기"가
+  // 떠서, 이미 등록한 사용자가 같은 프로필을 또 등록하게 된다 — 화면 대신 다시 시도를 보여준다.
   if (loadError && childList.length === 0) {
     return (
       <main className="px-5 py-10">

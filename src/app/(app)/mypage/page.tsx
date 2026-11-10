@@ -10,6 +10,7 @@ import { ApiError } from "@/lib/api";
 import { changePassword, getMe, updateNickname, withdraw, type UserResponse } from "@/lib/api/users";
 import { postToNative } from "@/lib/native-bridge";
 import { BottomSheet } from "@/components/bottom-sheet";
+import { GENDER_LABEL, RELATION_LABEL, ageLabel, displayName } from "@/lib/profile";
 
 type Sheet = "nickname" | "password" | "withdraw" | null;
 
@@ -25,7 +26,6 @@ function errorMessage(error: unknown, fallback: string): string {
   return fallback;
 }
 
-const GENDER_LABEL: Record<string, string> = { MALE: "남아", FEMALE: "여아" };
 
 const MENU = [
   { href: "/favorites", label: "즐겨찾기", Icon: Heart },
@@ -122,9 +122,9 @@ export default function MyPage() {
           <UserRound size={20} className="text-text-secondary" />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-bold">{me ? `${me.nickname}님` : "우리 아이 보호자님"}</p>
+          <p className="text-sm font-bold">{me ? `${me.nickname}님` : "미음:ON 회원님"}</p>
           <p className="truncate text-[11px] text-text-secondary">
-            {me ? me.email : "미음:ON과 함께 안심 이유식을 준비해요"}
+            {me ? me.email : "먹기 전에 성분을 살펴봐요"}
           </p>
         </div>
         {me ? (
@@ -138,14 +138,14 @@ export default function MyPage() {
         <p className="mb-4 rounded-2xl bg-background-element p-3.5 text-xs text-text-secondary">{notice}</p>
       ) : null}
 
-      <p className="mb-2.5 text-[13px] font-bold text-text-secondary">아이</p>
+      <p className="mb-2.5 text-[13px] font-bold text-text-secondary">프로필</p>
       <div className="mb-5 flex flex-col gap-2">
         {childList.length === 0 ? (
           <Link
             href="/children/new"
             className="rounded-2xl border border-dashed border-background-selected p-4 text-center text-sm text-text-secondary"
           >
-            아이를 등록하면 아이 맞춤 분석을 받을 수 있어요. 아이 등록하기 →
+            나 또는 가족 프로필을 등록하면 맞춤 분석을 받을 수 있어요. 프로필 등록하기 →
           </Link>
         ) : (
           // 링크를 선택 버튼 안에 넣으면 <button> 안의 <a>가 되어(잘못된 HTML) 엔진에 따라 이동하지 않는다.
@@ -168,11 +168,14 @@ export default function MyPage() {
                     color: selectedChild?.id === child.id ? "#fff" : "var(--foreground)",
                   }}
                 >
-                  {child.name.slice(0, 1)}
+                  {displayName(child).slice(0, 1)}
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-[13.5px] font-bold">
-                    {child.name} · {child.ageMonths}개월
+                    {displayName(child)} · {ageLabel(child.ageMonths)}
+                    <span className="ml-1.5 rounded-md bg-background-element px-1.5 py-0.5 text-[10px] font-medium text-text-secondary">
+                      {RELATION_LABEL[child.relation]}
+                    </span>
                   </p>
                   <p className="text-[11px] text-text-secondary">
                     {child.gender ? GENDER_LABEL[child.gender] : "성별 미입력"}
@@ -186,7 +189,7 @@ export default function MyPage() {
           ))
         )}
         <Link href="/children" className="self-start text-[11px] font-medium text-brand">
-          아이 관리 전체보기 ›
+          프로필 관리 전체보기 ›
         </Link>
       </div>
 
@@ -301,7 +304,7 @@ export default function MyPage() {
         <p className="mb-2 text-lg font-black tracking-tight">회원 탈퇴</p>
         <p className="text-[12.5px] leading-relaxed text-text-secondary">
           탈퇴하면 바로 로그아웃되고 이 계정으로는 다시 로그인할 수 없어요. 같은 이메일로 새로 가입할 수
-          있지만 지금 기록은 이어지지 않아요. 등록한 아이 정보와 기록은 보관 기간이 지나면 완전히 삭제돼요.
+          있지만 지금 기록은 이어지지 않아요. 등록한 프로필과 기록은 보관 기간이 지나면 완전히 삭제돼요.
         </p>
         {formError ? <p className="mt-2 text-xs text-[var(--grade-r)]">{formError}</p> : null}
         <button

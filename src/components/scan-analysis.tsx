@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 
 import { useAuth } from "@/lib/auth-context";
 import { useSelectedChild } from "@/lib/child-context";
+import { basisLabel } from "@/lib/profile";
 import { analyzeScan, type ScanAnalysisResponse } from "@/lib/api/analysis";
 import { ApiError } from "@/lib/api";
 import { GradeBadge } from "@/components/severity-badge";
@@ -45,7 +46,7 @@ function buildIssues(analysis: ScanAnalysisResponse): Issue[] {
 }
 
 /**
- * 원재료 촬영 결과를 지금 선택한 아이 기준으로 분석해 보여준다. 스캔을 찍을 때 고른 아이와 달라도 된다
+ * 원재료 촬영 결과를 지금 선택한 프로필 기준으로 분석해 보여준다. 스캔을 찍을 때 고른 프로필과 달라도 된다
  * (형제 각각의 알레르기로 같은 원재료를 확인하는 경우).
  */
 export function ScanAnalysis({ scanId }: { scanId: number }) {
@@ -75,9 +76,9 @@ export function ScanAnalysis({ scanId }: { scanId: number }) {
   if (!selectedChild) {
     return (
       <p className="rounded-2xl bg-background-element p-4 text-sm text-text-secondary">
-        아이 기준으로 분석하려면 아이를 먼저 등록하세요.{" "}
+        분석하려면 프로필을 먼저 등록하세요.{" "}
         <Link href="/children/new" className="text-brand underline">
-          아이 등록하기
+          프로필 등록하기
         </Link>
       </p>
     );
@@ -86,7 +87,7 @@ export function ScanAnalysis({ scanId }: { scanId: number }) {
     return <p className="rounded-2xl bg-background-element p-4 text-sm text-text-secondary">{error}</p>;
   }
   if (!analysis) {
-    return <p className="text-sm text-text-secondary">{selectedChild.name} 기준으로 분석하는 중…</p>;
+    return <p className="text-sm text-text-secondary">{basisLabel(selectedChild)}으로 분석하는 중…</p>;
   }
 
   const grade = toOverallGrade(analysis.overallGrade, analysis.needsReview);

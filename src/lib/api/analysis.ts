@@ -33,7 +33,7 @@ export interface CautionFindingResponse {
   evidences: EvidenceResponse[];
 }
 
-// 보호자가 아이에게 직접 지정한 주의 성분이 들어 있는 경우. 근거 문서가 없는 보호자 판단이라 심각도·근거가 없다.
+// 사용자가 프로필에 직접 지정한 주의 성분이 들어 있는 경우. 근거 문서가 없는 사용자 판단이라 심각도·근거가 없다.
 export interface ParentCautionFindingResponse {
   ingredientId: number;
   ingredientName: string;

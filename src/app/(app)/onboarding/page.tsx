@@ -32,13 +32,13 @@ export default function OnboardingPage() {
     <main className="flex min-h-screen flex-col px-6 pb-10 pt-16">
       <span className="text-2xl font-black tracking-tight text-brand">ㅁ:ON</span>
       <p className="mb-3 mt-7 text-[26px] font-black leading-snug tracking-tight">
-        우리 아이가 먹는 것을,
+        우리 가족이 먹는 것을,
         <br />
         먹기 전에 살펴봅니다.
       </p>
       <p className="mb-8 text-[13px] leading-relaxed text-text-secondary">
-        아이의 월령과 알레르기를 기준으로 제품의 원재료·영양을 대신 살펴봐요. 시작하기 전에 두 가지만
-        알려드릴게요.
+        나와 가족(아이 포함) 프로필의 연령·알레르기를 기준으로 제품의 원재료·영양을 대신 살펴봐요. 시작하기 전에
+        두 가지만 알려드릴게요.
       </p>
 
       <div className="mb-auto flex flex-col gap-3">

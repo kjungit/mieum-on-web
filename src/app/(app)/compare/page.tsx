@@ -100,9 +100,9 @@ export default function ComparePage() {
     return (
       <main className="px-6 py-8">
         <p className="rounded-2xl bg-background-element p-4 text-sm text-text-secondary">
-          제품을 비교하려면 아이를 먼저 등록하세요.{" "}
+          제품을 비교하려면 프로필을 먼저 등록하세요.{" "}
           <Link href="/children/new" className="text-brand underline">
-            아이 등록하기
+            프로필 등록하기
           </Link>
         </p>
       </main>

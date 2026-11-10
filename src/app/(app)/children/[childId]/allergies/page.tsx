@@ -56,7 +56,7 @@ export default function ChildAllergiesPage() {
   const { childId: childIdParam } = useParams<{ childId: string }>();
   const childId = Number(childIdParam);
   const { token } = useAuth();
-  // 제목은 route의 아이 기준이어야 한다 — 선택된 아이를 쓰면 다른 아이의 알레르기를 편집하면서 엉뚱한 이름이 보인다.
+  // 제목은 route의 프로필 기준이어야 한다 — 선택된 프로필을 쓰면 다른 프로필의 알레르기를 편집하면서 엉뚱한 이름이 보인다.
   const { children: childList } = useSelectedChild();
   const routeChild = childList.find((child) => child.id === childId) ?? null;
 

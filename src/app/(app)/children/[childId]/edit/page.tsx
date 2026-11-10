@@ -8,12 +8,13 @@ import { useSelectedChild } from "@/lib/child-context";
 import { deleteChild, getChild, updateChild, type ChildResponse } from "@/lib/api/children";
 import type { Gender } from "@/lib/api/types";
 import { ApiError, errorMessage } from "@/lib/api";
+import { RELATION_LABEL } from "@/lib/profile";
 import { BackButton } from "@/components/back-button";
 import { LoadError } from "@/components/load-error";
 
 const GENDER_OPTIONS: { value: Gender | ""; label: string }[] = [
-  { value: "FEMALE", label: "여아" },
-  { value: "MALE", label: "남아" },
+  { value: "FEMALE", label: "여" },
+  { value: "MALE", label: "남" },
   { value: "", label: "미입력" },
 ];
 
@@ -45,7 +46,7 @@ export default function EditChildPage() {
         setBirthDate(data.birthDate);
         setGender(data.gender ?? "");
       })
-      .catch((err) => setLoadError(errorMessage(err, "아이 정보를 불러오지 못했어요.")));
+      .catch((err) => setLoadError(errorMessage(err, "프로필 정보를 불러오지 못했어요.")));
   }, [token, childId, attempt]);
 
   const handleSubmit = async (event: FormEvent) => {
@@ -70,7 +71,7 @@ export default function EditChildPage() {
     if (!token) {
       return;
     }
-    if (!window.confirm(`${child?.name ?? "이 아이"} 정보를 삭제할까요? 이 작업은 되돌릴 수 없어요.`)) {
+    if (!window.confirm(`${child?.name ?? "이"} 프로필을 삭제할까요? 알레르기·촬영 기록도 함께 지워지고 되돌릴 수 없어요.`)) {
       return;
     }
     setError(null);
@@ -101,7 +102,8 @@ export default function EditChildPage() {
       <div className="mb-2">
         <BackButton fallbackHref="/children" />
       </div>
-      <p className="mb-5 text-xl font-black tracking-tight">아이 정보 수정</p>
+      <p className="mb-1.5 text-xl font-black tracking-tight">프로필 수정</p>
+      <p className="mb-5 text-xs text-text-secondary">관계: {RELATION_LABEL[child.relation]} (변경할 수 없어요)</p>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-3">
         <label className="flex flex-col gap-1.5">
@@ -126,7 +128,7 @@ export default function EditChildPage() {
               onChange={(event) => setBirthDate(event.target.value)}
               className="flex-1 bg-transparent text-sm font-medium"
             />
-            <span className="flex-none text-[11px] text-brand">월령 자동 계산</span>
+            <span className="flex-none text-[11px] text-brand">연령 자동 계산</span>
           </div>
         </label>
 
@@ -173,7 +175,7 @@ export default function EditChildPage() {
         onClick={handleDelete}
         className="mt-3 rounded-2xl border border-[rgba(214,74,63,0.35)] py-3.5 text-[13px] font-bold text-[#D64A3F]"
       >
-        아이 정보 삭제
+        프로필 삭제
       </button>
     </main>
   );

@@ -6,6 +6,7 @@ import { Camera, Search } from "lucide-react";
 
 import { useAuth } from "@/lib/auth-context";
 import { useSelectedChild } from "@/lib/child-context";
+import { basisLabel } from "@/lib/profile";
 import { getCategories, searchProducts, type ProductCategoryResponse } from "@/lib/api/products";
 import type { ProductSummaryResponse } from "@/lib/api/types";
 import { toggleCompareTray, useCompareTray, COMPARE_TRAY_MAX } from "@/lib/compare-tray";
@@ -175,7 +176,7 @@ export default function SearchPage() {
               ageFilterOn ? "border-brand text-brand" : "border-background-selected text-text-secondary"
             }`}
           >
-            {selectedChild ? `${selectedChild.name} 월령에 맞는 제품만` : "우리 아이 월령만"}
+            {selectedChild ? `${basisLabel(selectedChild)} 연령에 맞는 제품만` : "연령에 맞는 제품만"}
           </button>
         </div>
       ) : null}

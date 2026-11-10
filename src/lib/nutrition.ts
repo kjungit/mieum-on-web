@@ -61,7 +61,7 @@ export function nutritionVerdict(analysis: AnalysisResponse): NutritionVerdict {
   const evaluated = JUDGED_NUTRIENTS.filter((n) => evaluatedList.includes(n));
   const missing = JUDGED_NUTRIENTS.filter((n) => !evaluatedList.includes(n));
   if (missing.length === 0) {
-    return { kind: "withinLimits", text: "나트륨·당류 모두 아이 월령 기준을 넘지 않아요." };
+    return { kind: "withinLimits", text: "나트륨·당류 모두 연령 기준을 넘지 않아요." };
   }
   const missingText = `${missing.map((n) => NUTRIENT_LABEL[n]).join("·")}는 표기 정보가 부족하거나 기준과 맞지 않아 평가하지 못했어요.`;
   return {
