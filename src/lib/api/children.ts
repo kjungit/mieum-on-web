@@ -1,5 +1,5 @@
 import { apiFetch } from "@/lib/api";
-import type { AllergyStatus, Gender } from "@/lib/api/types";
+import type { AllergyStatus, Gender, ProfileRelation } from "@/lib/api/types";
 
 export interface ChildResponse {
   id: number;
@@ -7,6 +7,7 @@ export interface ChildResponse {
   birthDate: string;
   ageMonths: number;
   gender: Gender | null;
+  relation: ProfileRelation;
 }
 
 export interface ChildAllergyResponse {
@@ -26,6 +27,8 @@ interface ChildWriteRequest {
   name: string;
   birthDate: string;
   gender?: Gender | null;
+  // 등록 때만 쓴다(비우면 CHILD). 수정 요청에서는 무시된다.
+  relation?: ProfileRelation;
 }
 
 export function registerChild(token: string, request: ChildWriteRequest): Promise<ChildResponse> {

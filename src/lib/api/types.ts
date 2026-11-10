@@ -1,6 +1,8 @@
 // mieum-on-server 엔티티의 enum과 1:1로 맞춘 타입들.
 
 export type Gender = "MALE" | "FEMALE";
+// 프로필이 계정 주인과 어떤 관계인지. SELF(나)는 회원당 하나. 분석 규칙은 관계가 아니라 생년월일로 갈린다.
+export type ProfileRelation = "SELF" | "CHILD" | "FAMILY";
 export type AllergyStatus = "HAS" | "NONE" | "UNKNOWN";
 export type Severity = "GREEN" | "YELLOW" | "RED";
 export type RuleType = "ALLERGY" | "AGE" | "SODIUM" | "SUGAR" | "CAFFEINE" | "ADDITIVE";

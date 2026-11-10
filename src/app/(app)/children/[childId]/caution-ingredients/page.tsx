@@ -90,7 +90,7 @@ export default function ChildCautionIngredientsPage() {
       <div>
         <h1 className="text-[17px] font-black tracking-tight">주의 성분 직접 지정</h1>
         <p className="mt-2 rounded-2xl bg-background-element p-4 text-[11.5px] leading-relaxed text-text-secondary">
-          주의 성분은 &ldquo;나쁜 성분&rdquo;이 아니라 아이 기준으로 한 번 더 보는 항목이에요. 각 성분의 근거는
+          주의 성분은 &ldquo;나쁜 성분&rdquo;이 아니라 이 프로필 기준으로 한 번 더 보는 항목이에요. 각 성분의 근거는
           제품 상세 &gt; 주의 성분 &gt; 근거에서 볼 수 있어요. 이 설정은 알레르기 판정에는 영향을 주지 않아요.
         </p>
       </div>

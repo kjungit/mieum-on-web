@@ -4,8 +4,7 @@ import Link from "next/link";
 import { ChevronRight, Plus } from "lucide-react";
 
 import { useSelectedChild } from "@/lib/child-context";
-
-const GENDER_LABEL: Record<string, string> = { MALE: "남아", FEMALE: "여아" };
+import { GENDER_LABEL, RELATION_LABEL, ageLabel, displayName } from "@/lib/profile";
 
 export default function ChildrenPage() {
   const { children: childList, selectedChild, isLoading, selectChild } = useSelectedChild();
@@ -13,10 +12,10 @@ export default function ChildrenPage() {
   return (
     <main className="flex flex-col px-5 py-8 pb-16">
       <div className="mb-5 flex items-center justify-between">
-        <p className="text-[22px] font-black tracking-tight">아이 관리</p>
+        <p className="text-[22px] font-black tracking-tight">프로필 관리</p>
         <Link href="/children/new" className="flex items-center gap-1 text-[12.5px] font-bold text-brand">
           <Plus size={15} />
-          아이 추가
+          프로필 추가
         </Link>
       </div>
 
@@ -24,7 +23,7 @@ export default function ChildrenPage() {
 
       {!isLoading && childList.length === 0 ? (
         <p className="rounded-2xl border border-dashed border-background-selected p-4 text-center text-sm text-text-secondary">
-          아직 등록된 아이가 없어요.
+          아직 등록된 프로필이 없어요.
         </p>
       ) : null}
 
@@ -43,12 +42,17 @@ export default function ChildrenPage() {
                   color: selectedChild?.id === child.id ? "#fff" : "var(--foreground)",
                 }}
               >
-                {child.name.slice(0, 1)}
+                {displayName(child).slice(0, 1)}
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-[13.5px] font-bold">{child.name}</p>
+                <p className="flex items-center gap-1.5 text-[13.5px] font-bold">
+                  {displayName(child)}
+                  <span className="rounded-md bg-background-element px-1.5 py-0.5 text-[10px] font-medium text-text-secondary">
+                    {RELATION_LABEL[child.relation]}
+                  </span>
+                </p>
                 <p className="text-[11px] text-text-secondary">
-                  {child.ageMonths}개월 {child.gender ? `· ${GENDER_LABEL[child.gender]}` : ""}
+                  {ageLabel(child.ageMonths)} {child.gender ? `· ${GENDER_LABEL[child.gender]}` : ""}
                 </p>
               </div>
               {selectedChild?.id === child.id ? (

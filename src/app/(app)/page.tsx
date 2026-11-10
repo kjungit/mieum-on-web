@@ -17,6 +17,7 @@ import {
 import { analyze, type AnalysisResponse } from "@/lib/api/analysis";
 import { useCompareTray, COMPARE_TRAY_MAX } from "@/lib/compare-tray";
 import { GRADE_META, toOverallGrade, type OverallGrade } from "@/lib/grade";
+import { ageLabel, basisLabel, displayName } from "@/lib/profile";
 
 export default function Home() {
   const { token } = useAuth();
@@ -52,7 +53,7 @@ export default function Home() {
       Promise.resolve().then(() => setRecentAnalysis({}));
       return;
     }
-    // 아이를 바꾸면 이전 아이의 늦게 도착한 결과가 새 아이 목록에 섞이지 않게 버린다. 한 제품 분석이 실패해도
+    // 프로필을 바꾸면 이전 프로필의 늦게 도착한 결과가 새 목록에 섞이지 않게 버린다. 한 제품 분석이 실패해도
     // (삭제된 제품 등) 나머지 등급은 보여준다.
     let cancelled = false;
     Promise.allSettled(
@@ -114,10 +115,11 @@ export default function Home() {
       </div>
 
       <p className="mb-5 whitespace-pre-line text-2xl font-bold leading-snug tracking-tight">
-        {"우리 아이가 먹는 것,\n먹기 전에 살펴보세요."}
+        {"우리 가족이 먹는 것,\n먹기 전에 살펴보세요."}
       </p>
 
-      {!isLoading && childList.length > 0 ? (
+      {/* 프로필이 하나(본인)뿐이면 고를 게 없으니 선택기를 숨긴다 — 아이가 없는 사용자에겐 가장 단순한 화면이 된다. */}
+      {!isLoading && childList.length > 1 ? (
         <div className="mb-3.5 flex gap-2 overflow-x-auto pb-0.5">
           {childList.map((child) => {
             const active = child.id === selectedChild?.id;
@@ -135,12 +137,12 @@ export default function Home() {
                     active ? "bg-white/20 text-white" : "bg-background-element text-text-secondary"
                   }`}
                 >
-                  {child.name.slice(0, 1)}
+                  {displayName(child).slice(0, 1)}
                 </span>
                 <span className="flex flex-col items-start">
-                  <span className="text-[13px] font-bold leading-none">{child.name}</span>
+                  <span className="text-[13px] font-bold leading-none">{displayName(child)}</span>
                   <span className={`text-[11px] leading-none ${active ? "text-white/70" : "text-text-secondary"}`}>
-                    {child.ageMonths}개월
+                    {ageLabel(child.ageMonths)}
                   </span>
                 </span>
               </button>
@@ -150,7 +152,7 @@ export default function Home() {
             href="/children/new"
             className="flex flex-none items-center rounded-full border border-dashed border-background-selected px-4 text-xs font-medium text-text-secondary"
           >
-            아이 추가
+            프로필 추가
           </Link>
         </div>
       ) : null}
@@ -160,17 +162,18 @@ export default function Home() {
           href="/children/new"
           className="mb-4 block rounded-2xl border border-dashed border-background-selected p-4 text-center text-sm text-text-secondary"
         >
-          아이를 등록하면 아이 맞춤 분석을 받을 수 있어요. 아이 등록하기 →
+          나 또는 가족 프로필을 등록하면 맞춤 분석을 받을 수 있어요. 프로필 등록하기 →
         </Link>
       ) : null}
 
       {selectedChild ? (
         <div className="mb-4 rounded-[18px] border border-background-selected bg-background p-4.5 shadow-[0_2px_10px_rgba(22,24,26,0.03)]">
           <div className="mb-3 flex items-center justify-between">
-            <span className="text-[13px] font-bold">{selectedChild.name} 기준으로 분석해요</span>
-            <Link href="/children" className="text-[11px] font-medium text-brand">
-              알레르기 관리 ›
-            </Link>
+            <span className="text-[13px] font-bold">{basisLabel(selectedChild)}으로 분석해요</span>
+            <span className="flex gap-3 text-[11px] font-medium text-brand">
+              {childList.length === 1 ? <Link href="/children/new">아이·가족 추가</Link> : null}
+              <Link href="/children">알레르기 관리 ›</Link>
+            </span>
           </div>
           <div className="flex flex-wrap gap-1.5">
             {childTags.map((tag) => (

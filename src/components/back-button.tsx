@@ -3,7 +3,7 @@
 import { ChevronLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
 
-// 하단 탭에 없는 상세 화면(제품, 촬영 결과, 아이 정보)에서 이전 화면으로 돌아간다. 공유 링크 등으로 바로
+// 하단 탭에 없는 상세 화면(제품, 촬영 결과, 프로필 정보)에서 이전 화면으로 돌아간다. 공유 링크 등으로 바로
 // 들어와 되돌아갈 기록이 없으면 fallbackHref로 보낸다.
 export function BackButton({ fallbackHref = "/" }: { fallbackHref?: string }) {
   const router = useRouter();
