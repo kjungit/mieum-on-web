@@ -30,16 +30,24 @@ function readStoredChildId(): number | null {
   if (typeof window === "undefined") {
     return null;
   }
-  const raw = window.localStorage.getItem(STORAGE_KEY);
-  const parsed = raw ? Number(raw) : NaN;
-  return Number.isFinite(parsed) ? parsed : null;
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    const parsed = raw ? Number(raw) : NaN;
+    return Number.isFinite(parsed) ? parsed : null;
+  } catch {
+    return null; // 저장소를 못 쓰는 환경이면 선택만 기억하지 않는다.
+  }
 }
 
 function writeStoredChildId(childId: number): void {
   if (typeof window === "undefined") {
     return;
   }
-  window.localStorage.setItem(STORAGE_KEY, String(childId));
+  try {
+    window.localStorage.setItem(STORAGE_KEY, String(childId));
+  } catch {
+    // 무시
+  }
 }
 
 export function ChildProvider({ children: node }: { children: ReactNode }) {

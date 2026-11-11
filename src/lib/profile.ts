@@ -8,6 +8,13 @@ export const RELATION_LABEL: Record<ProfileRelation, string> = { SELF: "나", CH
 // 성인 프로필도 있어서 "남아/여아"가 아니라 "남/여"다.
 export const GENDER_LABEL: Record<string, string> = { MALE: "남", FEMALE: "여" };
 
+/** 생년월일 입력의 상한. toISOString()은 UTC라 KST 새벽엔 "오늘"이 어제가 된다 — 로컬 날짜로 만든다. */
+export function todayLocalIso(): string {
+  const now = new Date();
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+}
+
 /** 36개월 미만은 개월, 그 이상은 만 나이. 성인에게 "420개월"은 뜻이 없다. */
 export function ageLabel(ageMonths: number): string {
   return ageMonths < 36 ? `${ageMonths}개월` : `만 ${Math.floor(ageMonths / 12)}세`;

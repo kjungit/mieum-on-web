@@ -26,7 +26,7 @@ export function BottomNav() {
   }
 
   return (
-    <nav className="sticky bottom-0 z-10 flex border-t border-background-selected bg-background">
+    <nav className="sticky bottom-0 z-10 flex border-t border-background-selected bg-background pb-[env(safe-area-inset-bottom)]">
       {ITEMS.map(({ href, label, Icon }) => {
         const active = isActive(pathname, href);
         return (

@@ -220,7 +220,7 @@ export default function SearchPage() {
       {hasSearched && visibleResults.length === 0 ? (
         <Link
           href="/scan"
-          className="flex items-center justify-center gap-2 rounded-2xl bg-[#16181A] py-4 text-sm font-bold text-white"
+          className="flex items-center justify-center gap-2 rounded-2xl bg-inverse py-4 text-sm font-bold text-inverse-foreground"
         >
           <Camera size={16} />
           원재료 촬영하기

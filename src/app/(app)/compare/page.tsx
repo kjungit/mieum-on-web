@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 
 import { useAuth } from "@/lib/auth-context";
 import { useSelectedChild } from "@/lib/child-context";
+import { basisLabel } from "@/lib/profile";
 import { compareProducts, type AnalysisResponse } from "@/lib/api/analysis";
 import { OverallGradeBadge } from "@/components/severity-badge";
 import { RadarChart, type RadarSeries } from "@/components/radar-chart";
@@ -42,7 +43,7 @@ function nutritionScore(result: AnalysisResponse): number {
   return verdict.kind === "withinLimits" ? 1 : 0.5;
 }
 
-// 보호자가 직접 지정한 주의 성분도 주의 축에 반영한다(서버와 같이 최소 YELLOW).
+// 사용자가 직접 지정한 주의 성분도 주의 축에 반영한다(서버와 같이 최소 YELLOW).
 function parentCautionPenalty(result: AnalysisResponse): number {
   return result.parentCautionFindings.length > 0 ? 0.5 : 1;
 }
@@ -206,7 +207,7 @@ export default function ComparePage() {
       </div>
 
       <p className="px-0.5 text-[10.5px] leading-relaxed text-text-secondary/70">
-        비교 결과도 {selectedChild.name} 기준입니다. 등급이 같아도 근거 항목은 다를 수 있어요.
+        비교 결과도 {basisLabel(selectedChild)}입니다. 등급이 같아도 근거 항목은 다를 수 있어요.
       </p>
     </main>
   );

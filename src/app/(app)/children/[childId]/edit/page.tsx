@@ -8,7 +8,7 @@ import { useSelectedChild } from "@/lib/child-context";
 import { deleteChild, getChild, updateChild, type ChildResponse } from "@/lib/api/children";
 import type { Gender } from "@/lib/api/types";
 import { ApiError, errorMessage } from "@/lib/api";
-import { RELATION_LABEL } from "@/lib/profile";
+import { RELATION_LABEL, todayLocalIso } from "@/lib/profile";
 import { BackButton } from "@/components/back-button";
 import { LoadError } from "@/components/load-error";
 
@@ -123,7 +123,7 @@ export default function EditChildPage() {
             <input
               required
               type="date"
-              max={new Date().toISOString().slice(0, 10)}
+              max={todayLocalIso()}
               value={birthDate}
               onChange={(event) => setBirthDate(event.target.value)}
               className="flex-1 bg-transparent text-sm font-medium"

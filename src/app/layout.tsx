@@ -23,6 +23,11 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
+  // 앱 WebView 전용: iOS는 16px 미만 입력창에 포커스하면 화면을 확대하고 되돌리지 않는다. 핀치줌도 앱 UI에선 막는다.
+  maximumScale: 1,
+  userScalable: false,
+  // 하단 탭이 iPhone 홈 인디케이터·Android 제스처 바 뒤로 들어가지 않게 safe-area를 받는다(bottom-nav, bottom-sheet).
+  viewportFit: "cover",
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#FAF9F6" },
     { media: "(prefers-color-scheme: dark)", color: "#14171A" },

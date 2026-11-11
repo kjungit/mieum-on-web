@@ -17,6 +17,9 @@ import { ScanAnalysis } from "@/components/scan-analysis";
 type Status = "idle" | "waiting-camera" | "uploading" | "done" | "error";
 type Mode = "ingredient" | "barcode";
 
+// 서버 spring.servlet.multipart.max-file-size(10MB)와 같다. 넘기면 서버가 413을 주지만 올리기 전에 알려주는 게 낫다.
+const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
+
 export default function ScanPage() {
   const { token } = useAuth();
   const { selectedChild } = useSelectedChild();
@@ -42,6 +45,15 @@ export default function ScanPage() {
         setError(null);
         try {
           const blob = await fetch(message.dataUrl).then((res) => res.blob());
+          if (blob.size > MAX_UPLOAD_BYTES) {
+            throw new ApiError({
+              timestamp: new Date().toISOString(),
+              status: 413,
+              code: "C006",
+              message: "사진이 너무 커요(10MB 초과). 다시 촬영해주세요.",
+              errors: [],
+            });
+          }
           const { token: currentToken, childId } = latestRef.current;
           if (!currentToken) {
             throw new Error("로그인이 필요해요.");
