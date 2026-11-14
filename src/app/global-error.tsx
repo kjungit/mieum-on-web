@@ -1,9 +1,16 @@
 "use client";
 
+import * as Sentry from "@sentry/nextjs";
+import { useEffect } from "react";
+
 import "./globals.css";
 
 // 루트 레이아웃 자체가 실패했을 때의 마지막 안전망. 레이아웃을 대신하므로 html/body를 직접 그린다.
-export default function GlobalError({ reset }: { error: Error & { digest?: string }; reset: () => void }) {
+export default function GlobalError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
+  useEffect(() => {
+    Sentry.captureException(error);
+  }, [error]);
+
   return (
     <html lang="ko">
       <body className="flex min-h-screen flex-col items-center justify-center gap-3 bg-background px-6 text-center text-foreground">
