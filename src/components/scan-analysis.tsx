@@ -37,7 +37,7 @@ function buildIssues(analysis: ScanAnalysisResponse): Issue[] {
     }),
   );
   analysis.parentCautionFindings.forEach((f) =>
-    issues.push({ key: `parent-${f.ingredientId}`, grade: "Y", text: `${f.ingredientName} — 보호자님이 직접 지정한 주의 성분이에요.` }),
+    issues.push({ key: `parent-${f.ingredientId}`, grade: "Y", text: `${f.ingredientName} — 직접 지정한 주의 성분이에요.` }),
   );
   analysis.allergyNeedsReview.forEach((f) =>
     issues.push({ key: `review-${f.ingredientId}`, grade: "C", text: `${f.ingredientName} — 알레르기 여부가 확인되지 않은 성분이에요.` }),
@@ -100,7 +100,7 @@ export function ScanAnalysis({ scanId }: { scanId: number }) {
       <div className="rounded-[20px] p-4" style={{ backgroundColor: meta.tintVar, border: `1px solid ${meta.borderVar}` }}>
         <div className="mb-2 flex items-center gap-2">
           <GradeBadge grade={grade} />
-          <span className="text-xs text-text-secondary">{analysis.childName} 기준</span>
+          <span className="text-xs text-text-secondary">{basisLabel(selectedChild)}</span>
         </div>
         {issues.length > 0 ? (
           <ul className="flex flex-col gap-1.5">

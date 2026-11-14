@@ -30,7 +30,7 @@ export function RadarChart({ series }: { series: RadarSeries[] }) {
     <div className="rounded-[18px] border border-background-selected bg-background p-3.5">
       <svg viewBox="0 0 200 184" className="block w-full">
         {GRID_RINGS.map((scale) => (
-          <polygon key={scale} points={ringPoints(scale)} fill="none" stroke="rgba(22,24,26,0.1)" strokeWidth={1} />
+          <polygon key={scale} points={ringPoints(scale)} fill="none" stroke="var(--background-selected)" strokeWidth={1} />
         ))}
         {AXES.map((axis) => (
           <line
@@ -39,7 +39,7 @@ export function RadarChart({ series }: { series: RadarSeries[] }) {
             y1={CENTER.y}
             x2={CENTER.x + axis.unit.x * RADIUS}
             y2={CENTER.y + axis.unit.y * RADIUS}
-            stroke="rgba(22,24,26,0.09)"
+            stroke="var(--background-selected)"
           />
         ))}
         {series.map((s) => (
@@ -62,7 +62,7 @@ export function RadarChart({ series }: { series: RadarSeries[] }) {
             x={axis.textX}
             y={axis.textY}
             textAnchor="middle"
-            style={{ font: "700 9px 'Noto Sans KR', sans-serif", fill: "rgba(22,24,26,0.55)" }}
+            style={{ font: "700 9px 'Noto Sans KR', sans-serif", fill: "var(--text-secondary)" }}
           >
             {axis.label}
           </text>

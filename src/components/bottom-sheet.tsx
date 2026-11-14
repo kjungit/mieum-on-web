@@ -22,14 +22,14 @@ export function BottomSheet({
     >
       <div
         onClick={(event) => event.stopPropagation()}
-        className="max-h-[85vh] w-full overflow-y-auto rounded-t-3xl bg-background px-5 pb-10 pt-2.5"
+        className="max-h-[85vh] w-full overflow-y-auto rounded-t-3xl bg-background px-5 pb-[calc(2.5rem+env(safe-area-inset-bottom))] pt-2.5"
       >
         <div className="mx-auto mb-4 h-1 w-9 rounded-full bg-background-selected" />
         {children}
         <button
           type="button"
           onClick={onClose}
-          className="mt-4 block w-full rounded-2xl bg-[#16181A] py-4 text-center text-sm font-bold text-white"
+          className="mt-4 block w-full rounded-2xl bg-inverse py-4 text-center text-sm font-bold text-inverse-foreground"
         >
           닫기
         </button>

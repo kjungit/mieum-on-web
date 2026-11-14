@@ -7,6 +7,7 @@ import { Star } from "lucide-react";
 
 import { useAuth } from "@/lib/auth-context";
 import { useSelectedChild } from "@/lib/child-context";
+import { ageLabel, basisLabel } from "@/lib/profile";
 import { getProductDetail, type ProductDetailResponse } from "@/lib/api/products";
 import { addFavorite, listFavoriteProductIds, removeFavorite, upsertRecentView } from "@/lib/api/activity";
 import {
@@ -64,7 +65,7 @@ function buildAnalysisRows(analysis: AnalysisResponse): AnalysisRow[] {
     );
   }
   const ageText =
-    ageMessages.length > 0 ? ageMessages.join(" ") : `권장 연령 기준을 충족해요 · ${analysis.age.childAgeMonths}개월`;
+    ageMessages.length > 0 ? ageMessages.join(" ") : `권장 연령 기준을 충족해요 · ${ageLabel(analysis.age.childAgeMonths)}`;
 
   const worstCaution = analysis.cautionFindings.reduce<"RED" | "YELLOW" | "GREEN">(
     (worst, f) => (cautionSeverityRank[f.severity] > cautionSeverityRank[worst] ? f.severity : worst),
@@ -76,7 +77,7 @@ function buildAnalysisRows(analysis: AnalysisResponse): AnalysisRow[] {
       ? `${analysis.cautionFindings.map((f) => f.ingredientName).join(", ")} 성분을 한 번 더 확인해보세요.`
       : "별도로 확인할 주의 성분이 없어요.";
 
-  // 보호자가 직접 지정한 성분은 근거 문서가 없는 보호자 판단이라 서버도 최소 YELLOW로만 올린다.
+  // 사용자가 직접 지정한 성분은 근거 문서가 없는 사용자 판단이라 서버도 최소 YELLOW로만 올린다.
   const parentCautionRows: AnalysisRow[] =
     analysis.parentCautionFindings.length > 0
       ? [
@@ -84,7 +85,7 @@ function buildAnalysisRows(analysis: AnalysisResponse): AnalysisRow[] {
             key: "parentCaution",
             label: "직접 지정한 주의 성분",
             grade: "Y",
-            text: `보호자님이 지정한 ${analysis.parentCautionFindings.map((f) => f.ingredientName).join(", ")} 성분이 들어있어요.`,
+            text: `직접 지정한 ${analysis.parentCautionFindings.map((f) => f.ingredientName).join(", ")} 성분이 들어있어요.`,
             evidences: [],
           },
         ]
@@ -267,7 +268,7 @@ export default function ProductDetailPage() {
     analysis.allergyNeedsReview.forEach((f) => flag(f.ingredientName, "C"));
     analysis.age.ingredientFindings.forEach((f) => flag(f.ingredientName, severityToGrade(f.severity)));
     analysis.cautionFindings.forEach((f) => flag(f.ingredientName, severityToGrade(f.severity)));
-    // 보호자 지정 주의 성분은 서버와 같이 YELLOW로 본다.
+    // 직접 지정한 주의 성분은 서버와 같이 YELLOW로 본다.
     analysis.parentCautionFindings.forEach((f) => flag(f.ingredientName, "Y"));
   }
 
@@ -347,7 +348,7 @@ export default function ProductDetailPage() {
                 <p className="text-[13px] leading-relaxed" style={{ color: overallMeta.colorVar }}>
                   {explanation
                     ? explanation.explanationText
-                    : `${selectedChild.name} 기준으로 종합 판정했어요. 자세한 설명이 궁금하면 AI 설명을 확인해보세요.`}
+                    : `${basisLabel(selectedChild)}으로 종합 판정했어요. 자세한 설명이 궁금하면 AI 설명을 확인해보세요.`}
                 </p>
                 <button
                   type="button"
@@ -408,7 +409,7 @@ export default function ProductDetailPage() {
         <p className="mb-1 text-[15px] font-bold tracking-tight">원재료 {product.ingredients.length}개</p>
         <p className="mb-3 text-[11px] leading-relaxed text-text-secondary">
           표시 순서는 함량 순입니다.
-          {selectedChild ? ` 색이 있는 성분은 ${selectedChild.name} 기준 확인이 필요한 성분이에요.` : ""}
+          {selectedChild ? ` 색이 있는 성분은 ${basisLabel(selectedChild)} 확인이 필요한 성분이에요.` : ""}
         </p>
         {product.ingredients.length === 0 ? (
           <p className="text-sm text-text-secondary">등록된 원재료 정보가 없어요.</p>
@@ -513,7 +514,7 @@ export default function ProductDetailPage() {
         </button>
         <Link
           href={`/compare?ids=${compareTray.join(",")}`}
-          className="flex-1 rounded-[14px] bg-[#16181A] py-3.5 text-center text-[12.5px] font-bold text-white"
+          className="flex-1 rounded-[14px] bg-inverse py-3.5 text-center text-[12.5px] font-bold text-inverse-foreground"
         >
           비교함 보기 ({compareTray.length}/{COMPARE_TRAY_MAX})
         </Link>

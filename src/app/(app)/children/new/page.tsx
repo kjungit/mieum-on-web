@@ -7,7 +7,7 @@ import { useAuth } from "@/lib/auth-context";
 import { useSelectedChild } from "@/lib/child-context";
 import { registerChild } from "@/lib/api/children";
 import type { Gender, ProfileRelation } from "@/lib/api/types";
-import { RELATION_LABEL } from "@/lib/profile";
+import { RELATION_LABEL, todayLocalIso } from "@/lib/profile";
 import { ApiError } from "@/lib/api";
 import { BackButton } from "@/components/back-button";
 
@@ -26,7 +26,10 @@ export default function NewChildPage() {
 
   // 본인 프로필은 가입 때 자동으로 생기므로 보통 이미 있다. 없으면(소셜 로그인 가입) 본인을 기본으로 둔다.
   const hasSelf = profiles.some((profile) => profile.relation === "SELF");
-  const [relation, setRelation] = useState<ProfileRelation>(hasSelf ? "CHILD" : "SELF");
+  const [chosenRelation, setRelation] = useState<ProfileRelation>(hasSelf ? "CHILD" : "SELF");
+  // 새로고침으로 이 화면에 바로 들어오면 목록이 도착하기 전에 SELF가 기본값으로 잡힌다 — 목록이 와서 본인이 이미 있으면
+  // 상태를 고치지 않고 파생값으로 CHILD로 본다(그대로 제출하면 서버가 409를 낸다).
+  const relation: ProfileRelation = hasSelf && chosenRelation === "SELF" ? "CHILD" : chosenRelation;
   const [name, setName] = useState("");
   const [birthDate, setBirthDate] = useState("");
   const [gender, setGender] = useState<Gender | "">("");
@@ -114,7 +117,7 @@ export default function NewChildPage() {
             <input
               required
               type="date"
-              max={new Date().toISOString().slice(0, 10)}
+              max={todayLocalIso()}
               value={birthDate}
               onChange={(event) => setBirthDate(event.target.value)}
               className="flex-1 bg-transparent text-sm font-medium"

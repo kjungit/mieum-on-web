@@ -129,19 +129,19 @@ export default function Home() {
                 type="button"
                 onClick={() => selectChild(child.id)}
                 className={`flex flex-none items-center gap-2.5 rounded-full py-2 pl-2 pr-3.5 ${
-                  active ? "bg-[#16181A] text-white" : "border border-background-selected bg-background text-foreground"
+                  active ? "bg-inverse text-inverse-foreground" : "border border-background-selected bg-background text-foreground"
                 }`}
               >
                 <span
                   className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold ${
-                    active ? "bg-white/20 text-white" : "bg-background-element text-text-secondary"
+                    active ? "bg-inverse-foreground/20 text-inverse-foreground" : "bg-background-element text-text-secondary"
                   }`}
                 >
                   {displayName(child).slice(0, 1)}
                 </span>
                 <span className="flex flex-col items-start">
                   <span className="text-[13px] font-bold leading-none">{displayName(child)}</span>
-                  <span className={`text-[11px] leading-none ${active ? "text-white/70" : "text-text-secondary"}`}>
+                  <span className={`text-[11px] leading-none ${active ? "text-inverse-foreground/70" : "text-text-secondary"}`}>
                     {ageLabel(child.ageMonths)}
                   </span>
                 </span>
@@ -198,11 +198,11 @@ export default function Home() {
             <div className="text-[11.5px] text-white/70">제품명 · 브랜드 · 제조사</div>
           </div>
         </Link>
-        <Link href="/scan" className="flex flex-1 flex-col gap-6 rounded-[18px] bg-[#16181A] p-4 pt-4.5 text-white">
+        <Link href="/scan" className="flex flex-1 flex-col gap-6 rounded-[18px] bg-inverse p-4 pt-4.5 text-inverse-foreground">
           <Camera size={26} strokeWidth={1.8} />
           <div>
             <div className="text-[15px] font-bold">원재료 촬영</div>
-            <div className="text-[11.5px] text-white/60">DB에 없는 제품도 분석</div>
+            <div className="text-[11.5px] text-inverse-foreground/60">DB에 없는 제품도 분석</div>
           </div>
         </Link>
       </div>

@@ -9,6 +9,7 @@ import { BackButton } from "@/components/back-button";
 import { LoadError } from "@/components/load-error";
 import { errorMessage } from "@/lib/api";
 import { useSelectedChild } from "@/lib/child-context";
+import { displayName } from "@/lib/profile";
 import { getAllergies, upsertAllergy, type ChildAllergyResponse } from "@/lib/api/children";
 import { searchIngredients } from "@/lib/api/ingredients";
 import type { AllergyStatus, IngredientSummaryResponse } from "@/lib/api/types";
@@ -120,7 +121,7 @@ export default function ChildAllergiesPage() {
       {loadError ? <LoadError className="mb-4" message={loadError} onRetry={loadAllergies} /> : null}
       {actionError ? <p className="mb-4 text-sm text-text-secondary">{actionError}</p> : null}
       <p className="mb-1.5 text-xl font-black tracking-tight">
-        {routeChild ? `${routeChild.name}의 알레르기` : "알레르기 관리"}
+        {routeChild ? `${displayName(routeChild)}의 알레르기` : "알레르기 관리"}
       </p>
       <p className="mb-5 text-xs leading-relaxed text-text-secondary">
         체크하지 않은 성분이 &ldquo;없음&rdquo;으로 오인되지 않도록, 있음 · 알 수 없음 · 없음 3단계로 관리해요.{" "}
